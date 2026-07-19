@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cortex CI/CD{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.1') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  {% block extra_css %}{% endblock %}
+</head>
+<body class="dashboard-body">
+
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon-container">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">Cortex CI</span>
+          <span class="logo-subtitle">Self-Healing CI/CD Platform</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('main.dashboard') }}" class="sidebar-link {% if active_page == 'dashboard' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-house"></i></span>
+          <span>Dashboard</span>
+        </a>
+        <a href="{{ url_for('main.deployments') }}" class="sidebar-link {% if active_page == 'deployments' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-box"></i></span>
+          <span>Deployments</span>
+        </a>
+        <a href="{{ url_for('main.pipeline') }}" class="sidebar-link {% if active_page == 'pipeline' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-rocket"></i></span>
+          <span>CI/CD Pipeline</span>
+        </a>
+        <a href="{{ url_for('main.kubernetes') }}" class="sidebar-link {% if active_page == 'kubernetes' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-dharmachakra"></i></span>
+          <span>Kubernetes</span>
+        </a>
+        <a href="{{ url_for('main.monitoring') }}" class="sidebar-link {% if active_page == 'monitoring' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-chart-simple"></i></span>
+          <span>Monitoring</span>
+        </a>
+        <a href="{{ url_for('main.logs') }}" class="sidebar-link {% if active_page == 'logs' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-file-lines"></i></span>
+          <span>Logs</span>
+        </a>
+        <a href="{{ url_for('main.prediction') }}" class="sidebar-link {% if active_page == 'prediction' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-brain"></i></span>
+          <span>AI Prediction</span>
+        </a>
+        <a href="{{ url_for('main.self_healing') }}" class="sidebar-link {% if active_page == 'self_healing' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-gears"></i></span>
+          <span>Self-Healing</span>
+        </a>
+        <a href="{{ url_for('main.alerts') }}" class="sidebar-link {% if active_page == 'alerts' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-bell"></i></span>
+          <span>Alerts</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="{{ url_for('main.settings') }}" class="sidebar-link {% if active_page == 'settings' %}active{% endif %}">
+          <span class="link-icon-box"><i class="fa-solid fa-gear"></i></span>
+          <span>Settings</span>
+        </a>
+        <a href="{{ url_for('main.logout') }}" class="sidebar-link logout-link">
+          <span class="link-icon-box"><i class="fa-solid fa-right-from-bracket"></i></span>
+          <span>Log out</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Pane -->
+    <main class="main-content">
+      
+      <!-- Top Persistent Navbar -->
+      <header class="top-navbar">
+        <div class="top-nav-left">
+          <button class="nav-toggle-btn"><i class="fa-solid fa-bars"></i></button>
+          <div class="search-box-container">
+            <i class="fa-solid fa-search search-icon"></i>
+            <input type="text" placeholder="Search..." class="top-search-input">
+          </div>
+          <div class="top-status-badge" id="system-status-badge">
+            <span class="status-indicator-dot healthy"></span>
+            <span class="status-label">Healthy</span>
+          </div>
+        </div>
+        
+        <div class="top-nav-right">
+          <button class="icon-nav-btn" title="Alerts Center"><i class="fa-solid fa-bell"></i></button>
+          <button class="icon-nav-btn" title="AI Diagnostics Help"><i class="fa-solid fa-circle-question"></i></button>
+          <div class="nav-user-profile">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" alt="User Profile" class="nav-avatar">
+            <div class="user-details">
+              <span class="user-name-text">Holland</span>
+              <span class="user-role-text">DevOps Admin</span>
+            </div>
+            <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
+          </div>
+        </div>
+      </header>
+
+      <!-- Sub Page Content Block -->
+      <div class="page-content-wrapper">
+        {% block content %}{% endblock %}
+      </div>
+      
+    </main>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js', v='1.0.1') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

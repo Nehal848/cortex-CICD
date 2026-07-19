@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% set active_page = "self_healing" %}
+
+{% block title %}Self-Healing | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">Self-Healing</h1>
+      <p class="page-subtitle">AI-powered automated recovery for your applications.</p>
+    </div>
+  </header>
+
+  <!-- Horizontal Pipeline Flow Block -->
+  <div class="dashboard-card pipeline-flow-card">
+    <div class="pipeline-flow-container">
+      
+      <!-- Card 1: Detected Failure -->
+      <div class="flow-step-card border-red">
+        <div class="flow-card-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="flow-card-info">
+          <div class="flow-card-label">Detected Failure</div>
+          <div class="flow-card-value">Container Crash</div>
+        </div>
+      </div>
+
+      <div class="flow-connector"><i class="fa-solid fa-arrow-right"></i></div>
+
+      <!-- Card 2: Action Taken -->
+      <div class="flow-step-card border-green">
+        <div class="flow-card-icon green"><i class="fa-solid fa-arrows-rotate"></i></div>
+        <div class="flow-card-info">
+          <div class="flow-card-label">Action Taken</div>
+          <div class="flow-card-value success-color"><i class="fa-solid fa-check"></i> Restart Pod</div>
+        </div>
+      </div>
+
+      <div class="flow-connector"><i class="fa-solid fa-arrow-right"></i></div>
+
+      <!-- Card 3: Status -->
+      <div class="flow-step-card border-green">
+        <div class="flow-card-icon green"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="flow-card-info">
+          <div class="flow-card-label">Status</div>
+          <div class="flow-card-value success-color">Recovered</div>
+        </div>
+      </div>
+
+      <div class="flow-connector"><i class="fa-solid fa-arrow-right"></i></div>
+
+      <!-- Card 4: Recovery Time -->
+      <div class="flow-step-card border-purple">
+        <div class="flow-card-icon purple"><i class="fa-solid fa-clock"></i></div>
+        <div class="flow-card-info">
+          <div class="flow-card-label">Recovery Time</div>
+          <div class="flow-card-value purple-color">18 Seconds</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Recovery History Section -->
+  <section class="recovery-history-section">
+    <div class="history-section-header">
+      <h2 class="section-subtitle-serif">Recovery History</h2>
+      
+      <div class="history-filter-controls">
+        <select class="select-dropdown">
+          <option>All Types</option>
+          <option>Restart</option>
+          <option>Rollback</option>
+          <option>Scale Up</option>
+        </select>
+        <span class="filter-pill green-dot"><span class="dot green"></span> Restart</span>
+        <span class="filter-pill orange-dot"><span class="dot orange"></span> Rollback</span>
+        <span class="filter-pill blue-dot"><span class="dot blue"></span> Scale Up</span>
+      </div>
+    </div>
+
+    <!-- Timeline Wrapper -->
+    <div class="timeline-container">
+      
+      <!-- Day Group: Today -->
+      <div class="day-group">
+        <div class="day-marker">
+          <i class="fa-solid fa-calendar-days"></i>
+          <span>Today</span>
+        </div>
+        
+        <div class="timeline-cards-row">
+          
+          <!-- Timeline Card 1 -->
+          <div class="timeline-event-card">
+            <div class="card-timeline-pin green-pin"></div>
+            <div class="card-timestamp">10:32 AM</div>
+            <div class="timeline-card-body">
+              <div class="event-card-header">
+                <div class="event-icon bg-green"><i class="fa-solid fa-arrows-rotate"></i></div>
+                <div class="event-title-block">
+                  <h4 class="event-action-title">Restart</h4>
+                  <p class="event-action-desc">Pod frontend-service-7d9f8c was restarted automatically.</p>
+                </div>
+              </div>
+              <div class="event-card-status-badge green-badge">
+                <i class="fa-solid fa-circle-check"></i> Recovered
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline Card 2 -->
+          <div class="timeline-event-card">
+            <div class="card-timeline-pin orange-pin"></div>
+            <div class="card-timestamp">11:15 AM</div>
+            <div class="timeline-card-body">
+              <div class="event-card-header">
+                <div class="event-icon bg-orange"><i class="fa-solid fa-rotate-left"></i></div>
+                <div class="event-title-block">
+                  <h4 class="event-action-title">Rollback</h4>
+                  <p class="event-action-desc">Rolled back deployment v1.2.3 to v1.2.2 due to failure.</p>
+                </div>
+              </div>
+              <div class="event-card-status-badge green-badge">
+                <i class="fa-solid fa-circle-check"></i> Recovered
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline Card 3 -->
+          <div class="timeline-event-card">
+            <div class="card-timeline-pin blue-pin"></div>
+            <div class="card-timestamp">12:05 PM</div>
+            <div class="timeline-card-body">
+              <div class="event-card-header">
+                <div class="event-icon bg-blue"><i class="fa-solid fa-circle-arrow-up"></i></div>
+                <div class="event-title-block">
+                  <h4 class="event-action-title">Scale Up</h4>
+                  <p class="event-action-desc">Increased replicas from 2 to 4 due to high CPU usage.</p>
+                </div>
+              </div>
+              <div class="event-card-status-badge green-badge">
+                <i class="fa-solid fa-circle-check"></i> Successful
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Day Group: Yesterday -->
+      <div class="day-group">
+        <div class="day-marker">
+          <i class="fa-solid fa-calendar-days"></i>
+          <span>Yesterday</span>
+        </div>
+        
+        <div class="timeline-cards-row">
+          
+          <!-- Timeline Card 4 -->
+          <div class="timeline-event-card">
+            <div class="card-timeline-pin green-pin"></div>
+            <div class="card-timestamp">04:45 PM</div>
+            <div class="timeline-card-body">
+              <div class="event-card-header">
+                <div class="event-icon bg-green"><i class="fa-solid fa-arrows-rotate"></i></div>
+                <div class="event-title-block">
+                  <h4 class="event-action-title">Restart</h4>
+                  <p class="event-action-desc">Pod payment-service-6c7b9d was restarted automatically.</p>
+                </div>
+              </div>
+              <div class="event-card-status-badge green-badge">
+                <i class="fa-solid fa-circle-check"></i> Recovered
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline Card 5 -->
+          <div class="timeline-event-card">
+            <div class="card-timeline-pin green-pin"></div>
+            <div class="card-timestamp">06:30 PM</div>
+            <div class="timeline-card-body">
+              <div class="event-card-header">
+                <div class="event-icon bg-green"><i class="fa-solid fa-arrows-rotate"></i></div>
+                <div class="event-title-block">
+                  <h4 class="event-action-title">Restart</h4>
+                  <p class="event-action-desc">Pod user-service-5f6a7b was restarted automatically.</p>
+                </div>
+              </div>
+              <div class="event-card-status-badge green-badge">
+                <i class="fa-solid fa-circle-check"></i> Recovered
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+{% endblock %}

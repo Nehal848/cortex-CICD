@@ -1,0 +1,10 @@
+{
+  "permission": {
+    "read": {
+      "D:/Projects/CortexCICD/Self-Healing-CI-CD/.kilo/get-shit-done/*": "allow"
+    },
+    "external_directory": {
+      "D:/Projects/CortexCICD/Self-Healing-CI-CD/.kilo/get-shit-done/*": "allow"
+    }
+  }
+}

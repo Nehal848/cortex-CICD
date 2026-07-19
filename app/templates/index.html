@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cortex CI/CD | Self-Healing Pipeline</title>
+  <meta name="description" content="Next-generation CI/CD pipeline equipped with autonomous self-healing capabilities powered by agentic AI.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.1') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="logo">
+      <i class="fa-solid fa-microchip"></i>
+      Cortex CI/CD
+    </div>
+    <ul class="nav-links">
+      <li><a href="#" class="nav-item active">Home</a></li>
+      <li><a href="#features" class="nav-item">Features</a></li>
+      <li><a href="{{ url_for('main.dashboard') }}" class="nav-item">Dashboard</a></li>
+      <li><a href="#" class="nav-item">Documentation</a></li>
+      <li><a href="{{ url_for('main.login') }}" class="nav-item btn btn-secondary">Sign In</a></li>
+    </ul>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero">
+    <div class="hero-badge">
+      <span class="pulse-dot"></span>
+      Autonomous Agent v1.0.4 Active
+    </div>
+    <h1 class="hero-title">
+      Deploy Without Fear.<br>
+      <span>Self-Healing CI/CD</span> is here.
+    </h1>
+    <p class="hero-subtitle">
+      Automate the diagnostics, debugging, and patching of pipeline build failures. Powered by agentic AI that acts as an on-call software engineer.
+    </p>
+    <div class="hero-actions">
+      <a href="{{ url_for('main.login') }}" class="btn btn-primary">
+        Launch Dashboard
+        <i class="fa-solid fa-arrow-right"></i>
+      </a>
+      <a href="#" class="btn btn-secondary">
+        Read the Docs
+      </a>
+    </div>
+  </header>
+
+  <!-- Features Grid -->
+  <section class="features-grid" id="features">
+    <div class="feature-card glass-panel">
+      <div class="feature-icon">
+        <i class="fa-solid fa-bug-slash"></i>
+      </div>
+      <h3>Autonomous Diagnostics</h3>
+      <p>Instantly extracts stack traces, build logs, and environment configurations to pinpoint the root cause of pipeline failures.</p>
+    </div>
+
+    <div class="feature-card glass-panel">
+      <div class="feature-icon">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+      </div>
+      <h3>AI-Powered Patches</h3>
+      <p>Generates target code patches to fix imports, configuration settings, or test parameters, executing automatic corrections in sandbox branches.</p>
+    </div>
+
+    <div class="feature-card glass-panel">
+      <div class="feature-icon">
+        <i class="fa-solid fa-terminal"></i>
+      </div>
+      <h3>Real-time Agent Console</h3>
+      <p>Track the step-by-step reasoning, tool invocations, and code diff applications of our AI agents live on a glowing dashboard terminal.</p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-center p-2 mt-4" style="color: var(--text-secondary); font-size: 0.85rem; border-top: 1px solid var(--border-color); padding: 2rem 0;">
+    &copy; 2026 Cortex DevOps Platforms. Built with glassmorphism and premium design templates.
+  </footer>
+
+</body>
+</html>

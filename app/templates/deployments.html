@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% set active_page = "deployments" %}
+
+{% block title %}Deployments | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">Deployments</h1>
+      <p class="page-subtitle">Track and configure repository release deployments.</p>
+    </div>
+    <div class="page-actions-section">
+      <select class="select-dropdown flex-dropdown-width" id="deployments-namespace-select">
+        <option value="all">All Namespaces</option>
+        <option value="production">production</option>
+        <option value="staging">staging</option>
+        <option value="testing">testing</option>
+      </select>
+      <button class="btn-refresh" id="btn-deployments-refresh"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </header>
+
+  <!-- Deployments Grid -->
+  <div class="deployments-grid-container" id="deployments-cards-grid">
+    
+    <!-- Deployment Card 1: frontend-service -->
+    <div class="dashboard-card deployment-card-item" data-namespace="production">
+      <div class="deploy-card-header">
+        <h3 class="deploy-card-title">frontend-service</h3>
+        <span class="deploy-namespace-badge ns-production">production</span>
+      </div>
+      <div class="deploy-card-body">
+        <div class="deploy-info-row">
+          <span class="info-label">Active Release:</span>
+          <span class="info-value monospaced-span">v1.2.6</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Cluster Pods:</span>
+          <span class="info-value" id="pods-count-frontend">4/4 Running</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Traffic Share:</span>
+          <span class="info-value">100%</span>
+        </div>
+        
+        <!-- Pod Progress bar -->
+        <div class="status-card-progress mt-2 mb-3">
+          <div class="progress-bar-bg"><div class="progress-bar-fill green" style="width: 100%;" id="progress-bar-frontend"></div></div>
+        </div>
+
+        <div class="deploy-status-badge-row">
+          <div class="status-indicator">
+            <span class="status-indicator-dot healthy" id="status-dot-frontend"></span>
+            <span class="status-label healthy" id="status-text-frontend">Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="deploy-card-actions">
+        <button class="btn btn-outline-purple btn-deploy-action" data-service="frontend-service" data-action="logs"><i class="fa-solid fa-receipt"></i> Logs</button>
+        <button class="btn btn-outline-bluegray btn-deploy-action" data-service="frontend-service" data-action="rollback"><i class="fa-solid fa-rotate-left"></i> Rollback</button>
+        <button class="btn btn-outline-gold btn-deploy-action" data-service="frontend-service" data-action="redeploy"><i class="fa-solid fa-cloud-arrow-up"></i> Deploy</button>
+      </div>
+    </div>
+
+    <!-- Deployment Card 2: gateway-service -->
+    <div class="dashboard-card deployment-card-item" data-namespace="production">
+      <div class="deploy-card-header">
+        <h3 class="deploy-card-title">gateway-service</h3>
+        <span class="deploy-namespace-badge ns-production">production</span>
+      </div>
+      <div class="deploy-card-body">
+        <div class="deploy-info-row">
+          <span class="info-label">Active Release:</span>
+          <span class="info-value monospaced-span">v1.2.5</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Cluster Pods:</span>
+          <span class="info-value">2/2 Running</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Traffic Share:</span>
+          <span class="info-value">100%</span>
+        </div>
+        
+        <!-- Pod Progress bar -->
+        <div class="status-card-progress mt-2 mb-3">
+          <div class="progress-bar-bg"><div class="progress-bar-fill green" style="width: 100%;"></div></div>
+        </div>
+
+        <div class="deploy-status-badge-row">
+          <div class="status-indicator">
+            <span class="status-indicator-dot healthy"></span>
+            <span class="status-label healthy">Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="deploy-card-actions">
+        <button class="btn btn-outline-purple btn-deploy-action" data-service="gateway-service" data-action="logs"><i class="fa-solid fa-receipt"></i> Logs</button>
+        <button class="btn btn-outline-bluegray btn-deploy-action" data-service="gateway-service" data-action="rollback"><i class="fa-solid fa-rotate-left"></i> Rollback</button>
+        <button class="btn btn-outline-gold btn-deploy-action" data-service="gateway-service" data-action="redeploy"><i class="fa-solid fa-cloud-arrow-up"></i> Deploy</button>
+      </div>
+    </div>
+
+    <!-- Deployment Card 3: auth-service -->
+    <div class="dashboard-card deployment-card-item" data-namespace="staging">
+      <div class="deploy-card-header">
+        <h3 class="deploy-card-title">auth-service</h3>
+        <span class="deploy-namespace-badge ns-staging">staging</span>
+      </div>
+      <div class="deploy-card-body">
+        <div class="deploy-info-row">
+          <span class="info-label">Active Release:</span>
+          <span class="info-value monospaced-span">v1.2.6-rc2</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Cluster Pods:</span>
+          <span class="info-value">2/2 Running</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Traffic Share:</span>
+          <span class="info-value">100%</span>
+        </div>
+        
+        <!-- Pod Progress bar -->
+        <div class="status-card-progress mt-2 mb-3">
+          <div class="progress-bar-bg"><div class="progress-bar-fill green" style="width: 100%;"></div></div>
+        </div>
+
+        <div class="deploy-status-badge-row">
+          <div class="status-indicator">
+            <span class="status-indicator-dot healthy"></span>
+            <span class="status-label healthy">Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="deploy-card-actions">
+        <button class="btn btn-outline-purple btn-deploy-action" data-service="auth-service" data-action="logs"><i class="fa-solid fa-receipt"></i> Logs</button>
+        <button class="btn btn-outline-bluegray btn-deploy-action" data-service="auth-service" data-action="rollback"><i class="fa-solid fa-rotate-left"></i> Rollback</button>
+        <button class="btn btn-outline-gold btn-deploy-action" data-service="auth-service" data-action="redeploy"><i class="fa-solid fa-cloud-arrow-up"></i> Deploy</button>
+      </div>
+    </div>
+
+    <!-- Deployment Card 4: database-service -->
+    <div class="dashboard-card deployment-card-item" data-namespace="production">
+      <div class="deploy-card-header">
+        <h3 class="deploy-card-title">database-service</h3>
+        <span class="deploy-namespace-badge ns-production">production</span>
+      </div>
+      <div class="deploy-card-body">
+        <div class="deploy-info-row">
+          <span class="info-label">Active Release:</span>
+          <span class="info-value monospaced-span">v1.1.0</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Cluster Pods:</span>
+          <span class="info-value">3/3 Running</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Traffic Share:</span>
+          <span class="info-value">0% (Internal)</span>
+        </div>
+        
+        <!-- Pod Progress bar -->
+        <div class="status-card-progress mt-2 mb-3">
+          <div class="progress-bar-bg"><div class="progress-bar-fill green" style="width: 100%;"></div></div>
+        </div>
+
+        <div class="deploy-status-badge-row">
+          <div class="status-indicator">
+            <span class="status-indicator-dot healthy"></span>
+            <span class="status-label healthy">Active</span>
+          </div>
+        </div>
+      </div>
+      <div class="deploy-card-actions">
+        <button class="btn btn-outline-purple btn-deploy-action" data-service="database-service" data-action="logs"><i class="fa-solid fa-receipt"></i> Logs</button>
+        <button class="btn btn-outline-bluegray btn-deploy-action" data-service="database-service" data-action="rollback"><i class="fa-solid fa-rotate-left"></i> Rollback</button>
+        <button class="btn btn-outline-gold btn-deploy-action" data-service="database-service" data-action="redeploy"><i class="fa-solid fa-cloud-arrow-up"></i> Deploy</button>
+      </div>
+    </div>
+
+    <!-- Deployment Card 5: payment-service -->
+    <div class="dashboard-card deployment-card-item" data-namespace="testing">
+      <div class="deploy-card-header">
+        <h3 class="deploy-card-title">payment-service</h3>
+        <span class="deploy-namespace-badge ns-testing">testing</span>
+      </div>
+      <div class="deploy-card-body">
+        <div class="deploy-info-row">
+          <span class="info-label">Active Release:</span>
+          <span class="info-value monospaced-span">v0.9.4</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Cluster Pods:</span>
+          <span class="info-value" id="pods-count-payment">1/2 Running</span>
+        </div>
+        <div class="deploy-info-row">
+          <span class="info-label">Traffic Share:</span>
+          <span class="info-value">50%</span>
+        </div>
+        
+        <!-- Pod Progress bar -->
+        <div class="status-card-progress mt-2 mb-3">
+          <div class="progress-bar-bg"><div class="progress-bar-fill warning" style="width: 50%;" id="progress-bar-payment"></div></div>
+        </div>
+
+        <div class="deploy-status-badge-row">
+          <div class="status-indicator">
+            <span class="status-indicator-dot warning pulse" id="status-dot-payment"></span>
+            <span class="status-label warning" id="status-text-payment">Degraded</span>
+          </div>
+        </div>
+      </div>
+      <div class="deploy-card-actions">
+        <button class="btn btn-outline-purple btn-deploy-action" data-service="payment-service" data-action="logs"><i class="fa-solid fa-receipt"></i> Logs</button>
+        <button class="btn btn-outline-bluegray btn-deploy-action" data-service="payment-service" data-action="rollback"><i class="fa-solid fa-rotate-left"></i> Rollback</button>
+        <button class="btn btn-outline-gold btn-deploy-action" data-service="payment-service" data-action="redeploy"><i class="fa-solid fa-cloud-arrow-up"></i> Deploy</button>
+      </div>
+    </div>
+
+  </div>
+{% endblock %}

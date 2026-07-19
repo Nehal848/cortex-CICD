@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% set active_page = "settings" %}
+
+{% block title %}Platform Settings | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">Platform Settings</h1>
+    </div>
+  </header>
+
+  <!-- Split Row 1: Notifications & Alert Thresholds -->
+  <div class="settings-split-row">
+    
+    <!-- Left Panel: Notifications & Integrations -->
+    <div class="dashboard-card settings-card-item">
+      <h3 class="section-subtitle-serif border-bottom">Notifications & Integrations</h3>
+      <div class="settings-control-list">
+        
+        <!-- Toggle Item 1 -->
+        <div class="settings-control-item">
+          <div class="settings-item-label-block">
+            <span class="settings-item-main-title">Slack Notifications</span>
+            <span class="settings-item-sub-desc">Direct notifications for critical pipeline events.</span>
+          </div>
+          <div class="settings-action-input">
+            <label class="custom-toggle-btn">
+              <input type="checkbox" checked>
+              <span class="toggle-track-slider">
+                <span class="toggle-text-label">ON</span>
+                <span class="toggle-knob-dot"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Toggle Item 2 -->
+        <div class="settings-control-item">
+          <div class="settings-item-label-block">
+            <span class="settings-item-main-title">PagerDuty Integration</span>
+            <span class="settings-item-sub-desc">Create and route critical incident tickets.</span>
+          </div>
+          <div class="settings-action-input">
+            <label class="custom-toggle-btn">
+              <input type="checkbox" checked>
+              <span class="toggle-track-slider">
+                <span class="toggle-text-label">ON</span>
+                <span class="toggle-knob-dot"></span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Panel: Alert Thresholds -->
+    <div class="dashboard-card settings-card-item">
+      <h3 class="section-subtitle-serif border-bottom">Alert Thresholds</h3>
+      <div class="settings-control-list">
+        
+        <!-- Input Item 1 -->
+        <div class="settings-control-item">
+          <div class="settings-item-label-block">
+            <span class="settings-item-main-title">CPU Usage Threshold</span>
+            <span class="settings-item-sub-desc">Usage percentage to trigger system alerts.</span>
+          </div>
+          <div class="settings-action-input">
+            <div class="number-input-wrapper">
+              <input type="number" class="settings-num-input" value="80">
+              <span class="input-unit-label">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Item 2 -->
+        <div class="settings-control-item">
+          <div class="settings-item-label-block">
+            <span class="settings-item-main-title">Memory Usage Threshold</span>
+            <span class="settings-item-sub-desc">Usage percentage to trigger system alerts.</span>
+          </div>
+          <div class="settings-action-input">
+            <div class="number-input-wrapper">
+              <input type="number" class="settings-num-input" value="85">
+              <span class="input-unit-label">%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Split Row 2: Alert Thresholds (duplicated for exact screenshot match) & Empty Panel -->
+  <div class="settings-split-row">
+    
+    <!-- Left Panel: Duplicate Alert Thresholds -->
+    <div class="dashboard-card settings-card-item">
+      <h3 class="section-subtitle-serif border-bottom">Alert Thresholds</h3>
+      <div class="settings-control-list">
+        
+        <div class="settings-control-item">
+          <div class="settings-item-label-block">
+            <span class="settings-item-main-title">CPU Usage Threshold</span>
+            <span class="settings-item-sub-desc">Usage percentage to trigger system alerts.</span>
+          </div>
+          <div class="settings-action-input">
+            <div class="number-input-wrapper">
+              <input type="number" class="settings-num-input" value="80">
+              <span class="input-unit-label">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-control-item">
+          <div class="settings-item-label-block">
+            <span class="settings-item-main-title">Memory Usage Threshold</span>
+            <span class="settings-item-sub-desc">Usage percentage to trigger system alerts.</span>
+          </div>
+          <div class="settings-action-input">
+            <div class="number-input-wrapper">
+              <input type="number" class="settings-num-input" value="85">
+              <span class="input-unit-label">%</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Panel: Empty panel spacer (matches screenshot layout) -->
+    <div class="dashboard-card settings-card-item spacer-card-panel">
+      <!-- Empty panel spacer -->
+    </div>
+
+  </div>
+
+  <!-- Full Width Row: Automated Actions -->
+  <div class="dashboard-card settings-full-width-card">
+    <h3 class="section-subtitle-serif border-bottom">Automated Actions</h3>
+    
+    <div class="settings-control-list">
+      
+      <!-- Action Item 1 -->
+      <div class="settings-control-item align-center-row">
+        <div class="settings-item-label-block">
+          <span class="settings-item-main-title">Auto Rollback</span>
+          <span class="settings-item-sub-desc">Revert to previous deployment version on failure.</span>
+        </div>
+        <div class="settings-action-dual-block">
+          <label class="custom-toggle-btn">
+            <input type="checkbox" checked>
+            <span class="toggle-track-slider">
+              <span class="toggle-text-label">ON</span>
+              <span class="toggle-knob-dot"></span>
+            </span>
+          </label>
+          <select class="settings-action-select">
+            <option>Enabled</option>
+            <option>Disabled</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Item 2 -->
+      <div class="settings-control-item align-center-row">
+        <div class="settings-item-label-block">
+          <span class="settings-item-main-title">Auto Restart</span>
+          <span class="settings-item-sub-desc">Re-initialize unstable service instances.</span>
+        </div>
+        <div class="settings-action-dual-block">
+          <label class="custom-toggle-btn">
+            <input type="checkbox" checked>
+            <span class="toggle-track-slider">
+              <span class="toggle-text-label">ON</span>
+              <span class="toggle-knob-dot"></span>
+            </span>
+          </label>
+          <select class="settings-action-select opacity-muted">
+            <option>Disabled</option>
+            <option>Enabled</option>
+          </select>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Save Changes Row -->
+  <div class="settings-save-action-row">
+    <button class="btn btn-save-settings" id="btn-save-platform-settings">Save Changes</button>
+  </div>
+{% endblock %}

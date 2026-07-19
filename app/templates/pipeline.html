@@ -1,0 +1,484 @@
+{% extends "base.html" %}
+{% set active_page = "pipeline" %}
+
+{% block title %}CI/CD Pipeline | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Breadcrumbs & Title Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">CI/CD Pipeline</h1>
+      <p class="page-subtitle breadcrumb-text">Home > CI/CD Pipeline</p>
+    </div>
+    <div class="page-actions-section">
+      <select class="select-dropdown flex-dropdown-width" id="pipeline-time-filter">
+        <option value="24h">Last 24 Hours</option>
+        <option value="7d">Last 7 Days</option>
+        <option value="30d">Last 30 Days</option>
+      </select>
+      <button class="btn-refresh" id="btn-pipeline-refresh"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </header>
+
+  <!-- Top 5x Stats Cards Bar -->
+  <section class="pipeline-stats-row">
+    <!-- Card 1: Today's Builds -->
+    <div class="dashboard-card stat-card-item">
+      <div class="card-visual-container">
+        <div class="visual-icon-bg blue"><i class="fa-solid fa-square-poll-vertical"></i></div>
+      </div>
+      <div>
+        <div class="card-label">Today's Builds</div>
+        <div class="card-value" id="stat-todays-builds">18</div>
+        <div class="card-meta success-text"><i class="fa-solid fa-arrow-trend-up"></i> +2 vs yesterday</div>
+      </div>
+    </div>
+
+    <!-- Card 2: Success Rate -->
+    <div class="dashboard-card stat-card-item">
+      <div class="card-visual-container">
+        <div class="visual-icon-bg green"><i class="fa-solid fa-circle-notch"></i></div>
+      </div>
+      <div>
+        <div class="card-label">Success Rate</div>
+        <div class="card-value" id="stat-success-rate">94%</div>
+        <div class="card-meta success-text"><i class="fa-solid fa-arrow-trend-up"></i> +4% vs yesterday</div>
+      </div>
+    </div>
+
+    <!-- Card 3: Avg Build Time -->
+    <div class="dashboard-card stat-card-item">
+      <div class="card-visual-container">
+        <div class="visual-icon-bg purple"><i class="fa-solid fa-clock"></i></div>
+      </div>
+      <div>
+        <div class="card-label">Average Build Time</div>
+        <div class="card-value" id="stat-avg-time">4.5 min</div>
+        <div class="card-meta success-text"><i class="fa-solid fa-arrow-trend-down"></i> -0.6 min vs yesterday</div>
+      </div>
+    </div>
+
+    <!-- Card 4: Failed Builds -->
+    <div class="dashboard-card stat-card-item">
+      <div class="card-visual-container">
+        <div class="visual-icon-bg red"><i class="fa-solid fa-circle-xmark"></i></div>
+      </div>
+      <div>
+        <div class="card-label">Failed Builds</div>
+        <div class="card-value" id="stat-failed-builds">2</div>
+        <div class="card-meta success-text"><i class="fa-solid fa-arrow-trend-down"></i> -1 vs yesterday</div>
+      </div>
+    </div>
+
+    <!-- Card 5: Auto Recoveries -->
+    <div class="dashboard-card stat-card-item">
+      <div class="card-visual-container">
+        <div class="visual-icon-bg gold"><i class="fa-solid fa-wave-square"></i></div>
+      </div>
+      <div>
+        <div class="card-label">Auto Recoveries</div>
+        <div class="card-value" id="stat-auto-recoveries">2</div>
+        <div class="card-meta success-text"><i class="fa-solid fa-arrow-trend-up"></i> +1 vs yesterday</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Middle Grid: Current Pipeline & Quick Actions -->
+  <section class="middle-pipeline-grid">
+    <!-- Left Panel: Current Pipeline Node Flow -->
+    <div class="dashboard-card current-pipeline-card">
+      <div class="pipeline-card-header">
+        <h3 class="panel-subtitle">Current Pipeline: Build #256 <span class="badge badge-failed" id="pipeline-status-badge">Failed</span></h3>
+      </div>
+      
+      <!-- 10 Nodes Progress Schematic -->
+      <div class="pipeline-schematic-flow">
+        
+        <!-- Node 1: Code Commit -->
+        <div class="flow-node success" id="node-code-commit">
+          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
+          <span class="flow-node-label">Code Commit</span>
+          <span class="flow-node-status">Complete</span>
+        </div>
+        <div class="flow-connector success" id="conn-code-commit"></div>
+
+        <!-- Node 2: Checkout -->
+        <div class="flow-node success" id="node-checkout">
+          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
+          <span class="flow-node-label">Checkout</span>
+          <span class="flow-node-status">Complete</span>
+        </div>
+        <div class="flow-connector success" id="conn-checkout"></div>
+
+        <!-- Node 3: Build -->
+        <div class="flow-node success" id="node-build">
+          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
+          <span class="flow-node-label">Build</span>
+          <span class="flow-node-status">Complete</span>
+        </div>
+        <div class="flow-connector success" id="conn-build"></div>
+
+        <!-- Node 4: Unit Tests -->
+        <div class="flow-node success" id="node-unit-tests">
+          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
+          <span class="flow-node-label">Unit Tests</span>
+          <span class="flow-node-status">Complete</span>
+        </div>
+        <div class="flow-connector success" id="conn-unit-tests"></div>
+
+        <!-- Node 5: Docker Build -->
+        <div class="flow-node success" id="node-docker-build">
+          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
+          <span class="flow-node-label">Docker Build</span>
+          <span class="flow-node-status">Complete</span>
+        </div>
+        <div class="flow-connector success" id="conn-docker-build"></div>
+
+        <!-- Node 6: Image Scan -->
+        <div class="flow-node success" id="node-image-scan">
+          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
+          <span class="flow-node-label">Image Scan</span>
+          <span class="flow-node-status">Complete</span>
+        </div>
+        <div class="flow-connector success" id="conn-image-scan"></div>
+
+        <!-- Node 7: Push Registry -->
+        <div class="flow-node success" id="node-push-registry">
+          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
+          <span class="flow-node-label">Push Registry</span>
+          <span class="flow-node-status">Complete</span>
+        </div>
+        <div class="flow-connector success" id="conn-push-registry"></div>
+
+        <!-- Node 8: Deploy to K8s -->
+        <div class="flow-node failed" id="node-deploy-k8s">
+          <div class="flow-node-dot"><i class="fa-solid fa-xmark"></i></div>
+          <span class="flow-node-label">Deploy to K8s</span>
+          <span class="flow-node-status">Failed</span>
+        </div>
+        <div class="flow-connector" id="conn-deploy-k8s"></div>
+
+        <!-- Node 9: Health Check -->
+        <div class="flow-node waiting" id="node-health-check">
+          <div class="flow-node-dot"><i class="fa-solid fa-ellipsis"></i></div>
+          <span class="flow-node-label">Health Check</span>
+          <span class="flow-node-status">Waiting</span>
+        </div>
+        <div class="flow-connector" id="conn-health-check"></div>
+
+        <!-- Node 10: Production -->
+        <div class="flow-node waiting" id="node-production">
+          <div class="flow-node-dot"><i class="fa-solid fa-ellipsis"></i></div>
+          <span class="flow-node-label">Production</span>
+          <span class="flow-node-status">Waiting</span>
+        </div>
+
+      </div>
+
+      <!-- Progress Bar & Stage Indicator -->
+      <div class="pipeline-progress-section">
+        <div class="progress-bar-container">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill-purple" id="pipeline-progress-fill" style="width: 72%;"></div>
+          </div>
+          <span class="progress-percent-label" id="pipeline-progress-val">72%</span>
+        </div>
+        <div class="current-stage-indicator">
+          <span>Current Stage:</span>
+          <span class="stage-highlight red-text" id="pipeline-current-stage-text">Deploy to Kubernetes</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Quick Actions Deck -->
+    <div class="dashboard-card quick-actions-card">
+      <div class="pipeline-card-header">
+        <h3 class="panel-subtitle">Quick Actions</h3>
+      </div>
+      <div class="quick-actions-buttons">
+        <button class="btn btn-purple-action" id="btn-run-pipeline">
+          <i class="fa-solid fa-play"></i> Run Pipeline
+        </button>
+        <button class="btn btn-blue-action" id="btn-retry-build">
+          <i class="fa-solid fa-rotate-right"></i> Retry Failed Build
+        </button>
+        <button class="btn btn-gold-action" id="btn-rollback-build">
+          <i class="fa-solid fa-undo"></i> Rollback Deployment
+        </button>
+      </div>
+      <div class="quick-actions-links">
+        <a href="#" class="action-link-item"><i class="fa-solid fa-network-wired"></i> View Jenkins</a>
+        <a href="#" class="action-link-item"><i class="fa-solid fa-dharmachakra"></i> Open K8s Dashboard</a>
+        <a href="#" class="action-link-item"><i class="fa-solid fa-download"></i> Download Logs</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bottom Grid: Build Info, Build History, Stage Status, Logs, and Self-Healing -->
+  <section class="bottom-pipeline-grid">
+    
+    <!-- Left Column: Build Info & Build History -->
+    <div class="pipeline-col-panel flex-direction-col">
+      <!-- Build Information Card -->
+      <div class="dashboard-card info-history-card-height">
+        <div class="pipeline-card-header">
+          <h3 class="panel-title-text"><i class="fa-solid fa-circle-info"></i> Build Information</h3>
+        </div>
+        <table class="build-info-table">
+          <tr>
+            <td>Build Number</td>
+            <td class="bold-text">#256</td>
+          </tr>
+          <tr>
+            <td>Triggered By</td>
+            <td>Git Push</td>
+          </tr>
+          <tr>
+            <td>Branch</td>
+            <td><i class="fa-solid fa-code-branch"></i> main</td>
+          </tr>
+          <tr>
+            <td>Commit</td>
+            <td class="monospaced-span">c4ad2f1 <i class="fa-regular fa-copy copy-icon-action"></i></td>
+          </tr>
+          <tr>
+            <td>Duration</td>
+            <td>4 min 12 sec</td>
+          </tr>
+          <tr>
+            <td>Started</td>
+            <td>May 20, 2025 12:42 PM</td>
+          </tr>
+          <tr>
+            <td>Status</td>
+            <td><span class="status-pill-failed" id="info-status-pill">Failed</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Build History Table -->
+      <div class="dashboard-card info-history-card-height mt-4">
+        <div class="pipeline-card-header">
+          <h3 class="panel-title-text"><i class="fa-solid fa-clock-rotate-left"></i> Build History</h3>
+        </div>
+        <table class="build-history-table">
+          <thead>
+            <tr>
+              <th>Build</th>
+              <th>Status</th>
+              <th>Branch</th>
+              <th>Duration</th>
+              <th>Triggered By</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="failed-row-highlight">
+              <td class="bold-text">#256</td>
+              <td><span class="status-dot-table failed"></span> Failed</td>
+              <td><i class="fa-solid fa-code-branch"></i> main</td>
+              <td>4m 12s</td>
+              <td>Git Push</td>
+              <td>2 min ago</td>
+            </tr>
+            <tr>
+              <td class="bold-text">#255</td>
+              <td><span class="status-dot-table success"></span> Success</td>
+              <td><i class="fa-solid fa-code-branch"></i> main</td>
+              <td>5m 02s</td>
+              <td>Git Push</td>
+              <td>1 hour ago</td>
+            </tr>
+            <tr>
+              <td class="bold-text">#254</td>
+              <td><span class="status-dot-table failed"></span> Failed</td>
+              <td><i class="fa-solid fa-code-branch"></i> main</td>
+              <td>3m 45s</td>
+              <td>Git Push</td>
+              <td>3 hours ago</td>
+            </tr>
+            <tr>
+              <td class="bold-text">#253</td>
+              <td><span class="status-dot-table success"></span> Success</td>
+              <td><i class="fa-solid fa-code-branch"></i> main</td>
+              <td>6m 18s</td>
+              <td>Git Push</td>
+              <td>5 hours ago</td>
+            </tr>
+            <tr>
+              <td class="bold-text">#252</td>
+              <td><span class="status-dot-table success"></span> Success</td>
+              <td><i class="fa-solid fa-code-branch"></i> main</td>
+              <td>4m 05s</td>
+              <td>Git Push</td>
+              <td>7 hours ago</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="view-all-builds-footer">
+          <a href="#" class="view-all-link">View All Builds <i class="fa-solid fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Column: Stage Status table -->
+    <div class="pipeline-col-panel">
+      <div class="dashboard-card stage-status-card">
+        <div class="pipeline-card-header">
+          <h3 class="panel-title-text"><i class="fa-solid fa-list-check"></i> Stage Status</h3>
+        </div>
+        <table class="stage-status-table" id="stage-status-rows">
+          <thead>
+            <tr>
+              <th>Stage</th>
+              <th>Status</th>
+              <th>Duration</th>
+              <th>Started At</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="row-stage-checkout">
+              <td>1. Code Checkout</td>
+              <td><span class="stage-badge success">Success</span></td>
+              <td>15 sec</td>
+              <td>12:41:10 PM</td>
+            </tr>
+            <tr id="row-stage-build">
+              <td>2. Build</td>
+              <td><span class="stage-badge success">Success</span></td>
+              <td>1 min</td>
+              <td>12:41:25 PM</td>
+            </tr>
+            <tr id="row-stage-test">
+              <td>3. Unit Tests</td>
+              <td><span class="stage-badge success">Success</span></td>
+              <td>55 sec</td>
+              <td>12:42:25 PM</td>
+            </tr>
+            <tr id="row-stage-docker-build">
+              <td>4. Docker Build</td>
+              <td><span class="stage-badge success">Success</span></td>
+              <td>45 sec</td>
+              <td>12:43:20 PM</td>
+            </tr>
+            <tr id="row-stage-security">
+              <td>5. Security Scan</td>
+              <td><span class="stage-badge success">Success</span></td>
+              <td>30 sec</td>
+              <td>12:44:05 PM</td>
+            </tr>
+            <tr id="row-stage-push">
+              <td>6. Push Registry</td>
+              <td><span class="stage-badge success">Success</span></td>
+              <td>22 sec</td>
+              <td>12:44:35 PM</td>
+            </tr>
+            <tr id="row-stage-deploy">
+              <td>7. Deploy to K8s</td>
+              <td><span class="stage-badge failed" id="badge-stage-deploy">Failed</span></td>
+              <td>18 sec</td>
+              <td>12:45:02 PM</td>
+            </tr>
+            <tr id="row-stage-health">
+              <td>8. Health Check</td>
+              <td><span class="stage-badge waiting" id="badge-stage-health">Waiting</span></td>
+              <td>--</td>
+              <td>--</td>
+            </tr>
+            <tr id="row-stage-production">
+              <td>9. Production</td>
+              <td><span class="stage-badge waiting" id="badge-stage-production">Waiting</span></td>
+              <td>--</td>
+              <td>--</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Right Column: Recent logs & Self-Healing -->
+    <div class="pipeline-col-panel flex-direction-col">
+      <!-- Pipeline Logs (Recent) -->
+      <div class="dashboard-card pipeline-logs-card">
+        <div class="pipeline-card-header">
+          <h3 class="panel-title-text"><i class="fa-solid fa-terminal"></i> Pipeline Logs (Recent)</h3>
+          <button class="btn btn-outline-gold" id="btn-pipeline-logs-view">View Full Logs</button>
+        </div>
+        <div class="console-log-body" id="pipeline-console-logs-screen">
+          <div class="console-log-line info-line" data-level="INFO"><span class="log-timestamp">12:41:10</span> <span class="log-badge-inline info">INFO</span> Code checkout started</div>
+          <div class="console-log-line info-line" data-level="INFO"><span class="log-timestamp">12:41:25</span> <span class="log-badge-inline info">INFO</span> Build started</div>
+          <div class="console-log-line info-line" data-level="INFO"><span class="log-timestamp">12:42:25</span> <span class="log-badge-inline info">INFO</span> Unit tests passed</div>
+          <div class="console-log-line info-line" data-level="INFO"><span class="log-timestamp">12:43:20</span> <span class="log-badge-inline info">INFO</span> Docker image built successfully</div>
+          <div class="console-log-line info-line" data-level="INFO"><span class="log-timestamp">12:44:05</span> <span class="log-badge-inline info">INFO</span> Security scan passed</div>
+          <div class="console-log-line info-line" data-level="INFO"><span class="log-timestamp">12:44:35</span> <span class="log-badge-inline info">INFO</span> Image pushed to registry</div>
+          <div class="console-log-line info-line" data-level="INFO"><span class="log-timestamp">12:45:02</span> <span class="log-badge-inline info">INFO</span> Deployment started</div>
+          <div class="console-log-line error-line" data-level="ERROR"><span class="log-timestamp">12:45:18</span> <span class="log-badge-inline error">ERROR</span> Readiness probe failed</div>
+          <div class="console-log-line warn-line" data-level="WARN"><span class="log-timestamp">12:45:20</span> <span class="log-badge-inline warn">WARN</span> Pod is not ready</div>
+          <div class="console-log-line error-line" data-level="ERROR"><span class="log-timestamp">12:45:22</span> <span class="log-badge-inline error">ERROR</span> Deployment failed</div>
+        </div>
+        
+        <!-- Logs filter footer -->
+        <div class="logs-filter-footer-bar">
+          <div class="search-logs-input-container">
+            <i class="fa-solid fa-magnifying-glass search-logs-icon"></i>
+            <input type="text" id="logs-console-search-input" placeholder="Search logs..." class="logs-console-search-box">
+          </div>
+          <div class="logs-filter-pills-row">
+            <button class="log-pill-btn active" data-filter="all">All</button>
+            <button class="log-pill-btn" data-filter="info">INFO</button>
+            <button class="log-pill-btn" data-filter="warn">WARN</button>
+            <button class="log-pill-btn" data-filter="error">ERROR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Self-Healing & Recovery Card -->
+      <div class="dashboard-card self-healing-recovery-panel-card mt-4">
+        <div class="self-healing-panel-header">
+          <h3 class="panel-title-text"><i class="fa-solid fa-gears"></i> Self-Healing & Recovery</h3>
+          <span class="badge badge-red-outline" id="self-healing-status-tag">Failure Detected</span>
+        </div>
+        <div class="self-healing-panel-body">
+          <div class="self-healing-details-col">
+            <div class="recovery-detail-item">
+              <span class="label">Failure Reason</span>
+              <span class="value warning-orange-text" id="recovery-failure-reason"><i class="fa-solid fa-triangle-exclamation"></i> Readiness probe failed</span>
+            </div>
+            <div class="recovery-detail-item">
+              <span class="label">AI Recommendation</span>
+              <span class="value warning-orange-text" id="recovery-ai-rec"><i class="fa-solid fa-triangle-exclamation"></i> Restart Deployment</span>
+            </div>
+            <div class="recovery-detail-item">
+              <span class="label">Action Executed</span>
+              <span class="value green-text" id="recovery-action-exec">Restarted deployment</span>
+            </div>
+            <div class="recovery-detail-item">
+              <span class="label">Recovery Status</span>
+              <span class="value green-text bold-text" id="recovery-status-value"><i class="fa-solid fa-circle-check"></i> Recovered Successfully</span>
+            </div>
+            <div class="recovery-time-row">
+              <div class="time-item">
+                <span class="time-label">Recovery Time</span>
+                <span class="time-val" id="recovery-duration">27 sec</span>
+              </div>
+              <div class="time-item">
+                <span class="time-label">Recovered At</span>
+                <span class="time-val" id="recovery-timestamp">12:46:09 PM</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Shield Visual Badge -->
+          <div class="self-healing-shield-visual-container">
+            <div class="shield-glowing-ring healthy" id="self-healing-shield-ring">
+              <div class="shield-center-circle">
+                <i class="fa-solid fa-shield-halved shield-center-icon" id="self-healing-shield-icon"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+{% endblock %}

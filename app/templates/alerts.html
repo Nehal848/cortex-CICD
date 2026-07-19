@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% set active_page = "alerts" %}
+
+{% block title %}Alerts | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">Cortex CI Alerts</h1>
+    </div>
+    <div class="page-actions-section">
+      <select class="select-dropdown flex-dropdown-alerts">
+        <option>All (Red/Yellow/Green), Critical (Red), Warning (Yellow), Info (Green)</option>
+        <option>Critical (Red) only</option>
+        <option>Warning (Yellow) only</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Alerts Feed Outer Card -->
+  <div class="dashboard-card alerts-panel-card">
+    
+    <div class="alerts-panel-header">
+      <h2 class="section-subtitle-serif">Latest Alerts</h2>
+      <div class="alerts-search-wrapper">
+        <i class="fa-solid fa-search"></i>
+        <input type="text" placeholder="Alerts" class="alerts-search-input" id="alert-search">
+      </div>
+    </div>
+
+    <!-- Alert Items List -->
+    <div class="alerts-list-feed">
+      
+      <!-- Alert 1: Deployment Failed -->
+      <div class="alert-feed-item critical">
+        <div class="alert-icon-wrapper bg-red">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div class="alert-text-content">
+          <h4 class="alert-title-text critical-color">Deployment Failed</h4>
+          <p class="alert-desc-text">Deployment v1.2.5 - reason: timeout, frontend-service pod, US-East cluster | 5 min ago</p>
+        </div>
+      </div>
+
+      <!-- Alert 2: Auto Rollback Successful -->
+      <div class="alert-feed-item success">
+        <div class="alert-icon-wrapper bg-green">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="alert-text-content">
+          <h4 class="alert-title-text success-color">Auto Rollback Successful</h4>
+          <p class="alert-desc-text">Rolled back to v1.2.4 (commit e163o0e) - triggered by deployment failure | 10 min ago</p>
+        </div>
+      </div>
+
+      <!-- Alert 3: CPU Usage Above 80% -->
+      <div class="alert-feed-item warning-alert">
+        <div class="alert-icon-wrapper bg-gold">
+          <i class="fa-solid fa-circle-exclamation"></i>
+        </div>
+        <div class="alert-text-content">
+          <h4 class="alert-title-text gold-color">CPU Usage Above 80%</h4>
+          <p class="alert-desc-text">Cluster node-2: current 85% | 15 min ago</p>
+        </div>
+      </div>
+
+      <!-- Alert 4: Pod Restarted -->
+      <div class="alert-feed-item info">
+        <div class="alert-icon-wrapper bg-teal">
+          <i class="fa-solid fa-circle-info"></i>
+        </div>
+        <div class="alert-text-content">
+          <h4 class="alert-title-text teal-color">Pod Restarted</h4>
+          <p class="alert-desc-text">pod: frontend-service-70BIBs, transient error detected | 20 min ago</p>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+{% endblock %}

@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+
+{% block title %}Dashboard | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Dashboard Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">Self-Healing CI/CD Dashboard</h1>
+    </div>
+    <div class="page-actions-section">
+      <button class="btn btn-simulate" id="btn-simulate-heal">
+        <span class="btn-icon-highlight"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+        <span>Simulate Failure & Heal</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Top 4x2 Telemetry Cards Grid -->
+  <section class="telemetry-grid">
+    
+    <!-- 1. Deployments -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">Total Deployments</div>
+        <div class="card-value" id="val-deployments">12</div>
+        <div class="card-meta"><i class="fa-solid fa-arrow-trend-up"></i> +18% this week</div>
+      </div>
+      <div class="card-visual-container">
+        <div class="visual-icon-bg purple"><i class="fa-solid fa-cubes"></i></div>
+      </div>
+    </div>
+
+    <!-- 2. Active Pods -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">Active Cluster Pods</div>
+        <div class="card-value" id="val-pods">8<span class="val-sub">/8</span></div>
+        <div class="card-meta" id="meta-pods">Cluster state: 100%</div>
+      </div>
+      <div class="card-visual-container">
+        <div class="pod-matrix" id="pod-matrix-grid">
+          <span class="matrix-dot healthy"></span>
+          <span class="matrix-dot healthy"></span>
+          <span class="matrix-dot healthy"></span>
+          <span class="matrix-dot healthy"></span>
+          <span class="matrix-dot healthy"></span>
+          <span class="matrix-dot healthy"></span>
+          <span class="matrix-dot healthy"></span>
+          <span class="matrix-dot healthy"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. CPU Usage -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">CPU Usage</div>
+        <div class="card-value" id="cpu-percent">65%</div>
+        <div class="card-meta" id="cpu-meta">Load: Balanced</div>
+      </div>
+      <div class="card-visual-container">
+        <svg class="mini-progress-svg" viewBox="0 0 36 36">
+          <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          <path class="circle-fill cpu" id="cpu-circle" stroke-dasharray="65, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 4. Memory -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">Memory Allocation</div>
+        <div class="card-value" id="memory-percent">58%</div>
+        <div class="card-meta" id="memory-meta">Available: 6.7 GB</div>
+      </div>
+      <div class="card-visual-container">
+        <svg class="mini-progress-svg" viewBox="0 0 36 36">
+          <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          <path class="circle-fill memory" id="memory-circle" stroke-dasharray="58, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- 5. Success Rate -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">Pipeline Success Rate</div>
+        <div class="card-value" id="val-success-rate">96.8%</div>
+        <div class="card-meta">Target threshold: 95.0%</div>
+      </div>
+      <div class="card-visual-container">
+        <div class="visual-icon-bg green"><i class="fa-solid fa-circle-check"></i></div>
+      </div>
+    </div>
+
+    <!-- 6. Failed Builds -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">Failed Builds</div>
+        <div class="card-value" id="failed-builds-val">2</div>
+        <div class="card-meta" id="failed-builds-meta">Auto-rollback active</div>
+      </div>
+      <div class="card-visual-container">
+        <div class="visual-icon-bg red" id="failed-builds-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      </div>
+    </div>
+
+    <!-- 7. Healing Actions -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">Total Healed Runs</div>
+        <div class="card-value" id="healing-actions-val">15</div>
+        <div class="card-meta">Success rate: 100%</div>
+      </div>
+      <div class="card-visual-container">
+        <div class="visual-icon-bg gold" id="healing-actions-icon"><i class="fa-solid fa-bolt"></i></div>
+      </div>
+    </div>
+
+    <!-- 8. Cluster Security -->
+    <div class="dashboard-card">
+      <div>
+        <div class="card-label">Security Scan</div>
+        <div class="card-value green-text">Passed</div>
+        <div class="card-meta">Active CVEs: 0</div>
+      </div>
+      <div class="card-visual-container">
+        <div class="visual-icon-bg teal"><i class="fa-solid fa-shield-halved"></i></div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Main Grid Layout -->
+  <section class="main-dashboard-grid">
+    
+    <!-- Left Column (CPU & Memory Graphs and Terminal Console) -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+      
+      <!-- Combined CPU & Memory Graph Card -->
+      <div class="dashboard-card graph-panel" style="display: block; padding: 1.5rem;">
+        <div class="panel-title-container" style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-chart-line" style="color: var(--teal-graph);"></i>
+            <span class="panel-title">System Performance Monitor</span>
+          </div>
+          <div class="graph-legend">
+            <span class="legend-item"><span class="legend-color cpu"></span>CPU</span>
+            <span class="legend-item"><span class="legend-color memory"></span>Memory</span>
+          </div>
+        </div>
+        <div class="chart-container">
+          <div class="chart-tooltip" id="sys-chart-tooltip" style="display: none;"></div>
+          <svg class="chart-svg" viewBox="0 0 700 180" preserveAspectRatio="none">
+            <!-- SVG defs for gradients -->
+            <defs>
+              <linearGradient id="cpu-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--teal-graph)" stop-opacity="0.25" />
+                <stop offset="100%" stop-color="var(--teal-graph)" stop-opacity="0.0" />
+              </linearGradient>
+              <linearGradient id="mem-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--purple-gauge)" stop-opacity="0.2" />
+                <stop offset="100%" stop-color="var(--purple-gauge)" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+            
+            <!-- Horizontal Grid lines -->
+            <line class="grid-line" x1="40" y1="20" x2="680" y2="20" />
+            <line class="grid-line" x1="40" y1="55" x2="680" y2="55" />
+            <line class="grid-line" x1="40" y1="90" x2="680" y2="90" />
+            <line class="grid-line" x1="40" y1="125" x2="680" y2="125" />
+            <line class="grid-line" x1="40" y1="160" x2="680" y2="160" />
+
+            <!-- Y Axis Labels -->
+            <text class="axis-labels" x="10" y="24">100%</text>
+            <text class="axis-labels" x="10" y="59">75%</text>
+            <text class="axis-labels" x="10" y="94">50%</text>
+            <text class="axis-labels" x="10" y="129">25%</text>
+            <text class="axis-labels" x="10" y="164">0%</text>
+
+            <!-- Gradient Area Curves -->
+            <path d="M 40 160 Q 148 90 256 100 T 472 65 T 680 40 L 680 160 Z" fill="url(#cpu-grad)" />
+            <path d="M 40 160 Q 148 110 256 115 T 472 85 T 680 70 L 680 160 Z" fill="url(#mem-grad)" />
+
+            <!-- Bezier Line Curves -->
+            <path d="M 40 160 Q 148 90 256 100 T 472 65 T 680 40" fill="none" stroke="var(--teal-graph)" stroke-width="2.5" id="cpu-curve" />
+            <path d="M 40 160 Q 148 110 256 115 T 472 85 T 680 70" fill="none" stroke="var(--purple-gauge)" stroke-width="2.5" id="mem-curve" opacity="0.85" />
+
+            <!-- Tooltip Line & Dots -->
+            <line class="tooltip-line" id="sys-tooltip-line" x1="0" y1="0" x2="0" y2="0" style="display: none;" />
+            <circle id="sys-cpu-dot" cx="0" cy="0" r="5" fill="var(--teal-graph)" stroke="var(--bg-dark)" stroke-width="1.5" style="display: none;" />
+            <circle id="sys-mem-dot" cx="0" cy="0" r="5" fill="var(--purple-gauge)" stroke="var(--bg-dark)" stroke-width="1.5" style="display: none;" />
+
+            <!-- X Axis Months -->
+            <text class="axis-labels" x="35" y="176">Jan</text>
+            <text class="axis-labels" x="90" y="176">Feb</text>
+            <text class="axis-labels" x="145" y="176">Mar</text>
+            <text class="axis-labels" x="200" y="176">Apr</text>
+            <text class="axis-labels" x="255" y="176">May</text>
+            <text class="axis-labels" x="310" y="176">Jun</text>
+            <text class="axis-labels" x="365" y="176">Jul</text>
+            <text class="axis-labels" x="420" y="176">Aug</text>
+            <text class="axis-labels" x="475" y="176">Sep</text>
+            <text class="axis-labels" x="530" y="176">Oct</text>
+            <text class="axis-labels" x="585" y="176">Nov</text>
+            <text class="axis-labels" x="640" y="176">Dec</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- AI Self-Healing Agent Terminal -->
+      <div class="dashboard-card agent-terminal" style="display: block;">
+        <div class="terminal-header">
+          <div class="terminal-tabs">
+            <span class="terminal-tab active" id="tab-terminal"><i class="fa-solid fa-terminal"></i> cortex-healing-agent</span>
+            <span class="terminal-tab" id="tab-diff" style="display: none;"><i class="fa-solid fa-code-compare"></i> code-diff</span>
+          </div>
+          <div class="terminal-status">
+            <span class="status-pulse-dot idle" id="agent-pulse"></span>
+            <span id="agent-status-text">Agent Idle</span>
+          </div>
+        </div>
+        <div class="terminal-body" id="agent-terminal-body">
+          <div class="terminal-line system-line">[SYSTEM] Terminal initialized. Waiting for diagnostics trigger...</div>
+          <div class="terminal-line system-line">[SYSTEM] Click the "Simulate Failure & Heal" button in the top right to start.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Column (Deployments List, Actions, Incidents) -->
+    <div class="right-column-container">
+      
+      <!-- Recent Pipeline Runs Card -->
+      <div class="dashboard-card" style="display: block; padding: 1.25rem 1.5rem;">
+        <div class="panel-title-container">
+          <i class="fa-solid fa-rectangle-list" style="color: var(--text-gold-light);"></i>
+          <span class="panel-title">Recent Pipeline Runs</span>
+        </div>
+        
+        <div class="timeline-list">
+          <table class="deployments-table" id="runs-table">
+            <thead>
+              <tr>
+                <th colspan="2">Pipeline RUN</th>
+                <th>Trigger</th>
+                <th class="right-align">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for run in runs %}
+              <tr id="run-row-{{ run.id }}">
+                <td class="timeline-col">
+                  <div class="timeline-line"></div>
+                  <div class="timeline-node {% if run.status == 'Success' %}success{% elif run.status == 'Failed' %}failed{% else %}healed{% endif %}" id="node-{{ run.id }}">
+                    <i class="fa-solid {% if run.status == 'Success' %}fa-check{% elif run.status == 'Failed' %}fa-xmark{% else %}fa-bolt{% endif %}" id="icon-{{ run.id }}"></i>
+                  </div>
+                </td>
+                <td>
+                  <div class="deploy-info">
+                    <span class="deploy-name">{{ run.id }} ({{ run.branch }})</span>
+                    <span class="deploy-time">{{ run.timestamp }}</span>
+                  </div>
+                </td>
+                <td class="deploy-date">{{ run.triggered_by }}</td>
+                <td class="right-align">
+                  <span class="run-status-pill {% if run.status == 'Success' %}status-success{% elif run.status == 'Failed' %}status-failed{% else %}status-healed{% endif %}" id="pill-{{ run.id }}">
+                    {{ run.status }}
+                  </span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Total Auto-Healed Panel Card -->
+      <div class="dashboard-card auto-healed-panel" style="display: block;">
+        <div class="healed-value-container">
+          <div>
+            <div class="healed-value-title">Total Incidents Handled</div>
+            <div class="healed-value-count" id="incidents-count-val">
+              17 <span>Total</span>
+            </div>
+          </div>
+          <div class="sparkline-container">
+            <svg viewBox="0 0 140 60" style="width: 100%; height: 100%;">
+              <defs>
+                <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--teal-graph)" stop-opacity="0.3" />
+                  <stop offset="100%" stop-color="var(--teal-graph)" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+              <path d="M 5 50 Q 30 45 50 30 T 90 20 T 115 15 T 135 5 L 135 50 Z" fill="url(#sparkline-grad)" />
+              <path d="M 5 50 Q 30 45 50 30 T 90 20 T 115 15 T 135 5" fill="none" stroke="var(--teal-graph)" stroke-width="2.5" />
+              <circle cx="115" cy="15" r="4" fill="#ffffff" />
+            </svg>
+          </div>
+        </div>
+        
+        <!-- Outlined Button Deck -->
+        <div class="action-deck-buttons">
+          <button class="btn btn-outline-purple" id="btn-view-logs"><span class="btn-icon-highlight small"><i class="fa-solid fa-receipt"></i></span> Logs</button>
+          <button class="btn btn-outline-bluegray" id="btn-rollback"><span class="btn-icon-highlight small"><i class="fa-solid fa-rotate-left"></i></span> Rollback</button>
+          <button class="btn btn-outline-gold" id="btn-system-check"><span class="btn-icon-highlight small"><i class="fa-solid fa-heartbeat"></i></span> Health</button>
+        </div>
+      </div>
+
+    </div>
+
+  </section>
+{% endblock %}

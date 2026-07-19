@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% set active_page = "prediction" %}
+
+{% block title %}AI Prediction | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section-inline">
+      <h1 class="page-title-serif">AI Prediction Page</h1>
+      <i class="fa-regular fa-clock clock-icon-meta"></i>
+      <div class="status-generated-badge">
+        <span class="status-indicator-dot healthy"></span>
+        <span>Generated: 2m ago</span>
+      </div>
+    </div>
+    <div class="page-actions-section">
+      <button class="btn btn-dropdown" id="btn-date-filter">
+        <i class="fa-regular fa-calendar"></i>
+        <span>Last 24 Hours</span>
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+      <button class="btn-refresh"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </header>
+
+  <!-- 2x2 AI Prediction Grid -->
+  <div class="prediction-grid-container">
+    
+    <!-- 1. Failure Probability Gauge -->
+    <div class="dashboard-card prediction-card">
+      <div class="prediction-card-header">Failure Probability</div>
+      <div class="prediction-card-content center-content">
+        <div class="circular-gauge-wrapper">
+          <svg class="prediction-gauge-svg" viewBox="0 0 100 100">
+            <circle class="gauge-bg-circle" cx="50" cy="50" r="40" />
+            <circle class="gauge-fill-circle" cx="50" cy="50" r="40" stroke-dasharray="231 251.3" />
+          </svg>
+          <div class="gauge-percentage-value">92%</div>
+        </div>
+        <div class="gauge-model-label">Model: Cortex-Prediction-v4.1</div>
+        <div class="gauge-risk-badge risk-high">[High Risk - Gold/Red]</div>
+      </div>
+    </div>
+
+    <!-- 2. Prediction Details -->
+    <div class="dashboard-card prediction-card">
+      <div class="prediction-card-header">Prediction Details</div>
+      <div class="prediction-card-content center-content pad-top">
+        <div class="prediction-details-icon">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <h3 class="prediction-details-title">High CPU Usage</h3>
+        <p class="prediction-details-desc">
+          Critical load threshold imminent in pod <span class="monospaced-span">'frontend-55b'</span> (node <span class="monospaced-span">k8s-node-2</span>)
+        </p>
+        <div class="gauge-risk-badge risk-system">[System-Wide Event - Blue]</div>
+      </div>
+    </div>
+
+    <!-- 3. Suggested Mitigation Action -->
+    <div class="dashboard-card prediction-card">
+      <div class="prediction-card-header">Suggested Mitigation Action</div>
+      <div class="prediction-card-content center-content">
+        <!-- Visual Pod Matrix Scaling schematic -->
+        <div class="scaling-schematic-container">
+          
+          <!-- Left Matrix (8 pods) -->
+          <div class="schematic-matrix-box">
+            <div class="schematic-dots-grid grid-8">
+              <span class="schematic-dot"></span>
+              <span class="schematic-dot"></span>
+              <span class="schematic-dot"></span>
+              <span class="schematic-dot"></span>
+              <span class="schematic-dot"></span>
+              <span class="schematic-dot"></span>
+              <span class="schematic-dot"></span>
+              <span class="schematic-dot"></span>
+            </div>
+            <span class="schematic-label">Service</span>
+          </div>
+
+          <!-- Scaling Indicator Arrow -->
+          <div class="schematic-arrow-indicator">
+            <span class="scale-value-text">8 &rarr; 12</span>
+          </div>
+
+          <!-- Right Matrix (12 pods) -->
+          <div class="schematic-matrix-box">
+            <div class="schematic-dots-grid grid-12">
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+              <span class="schematic-dot active"></span>
+            </div>
+          </div>
+
+        </div>
+
+        <h3 class="prediction-details-title">Increase Pods</h3>
+        <p class="prediction-details-desc">
+          Scale 'frontend-service' replicas by +4 to distribute load
+        </p>
+        <button class="btn btn-execute-action" id="btn-execute-scaling">
+          <span>Execute Scaling</span>
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. Estimated Mitigation Time -->
+    <div class="dashboard-card prediction-card">
+      <div class="prediction-card-header">Estimated Mitigation Time</div>
+      <div class="prediction-card-content center-content pad-top">
+        <div class="prediction-details-icon stopwatch">
+          <i class="fa-solid fa-stopwatch"></i>
+        </div>
+        <h3 class="prediction-details-title time-val-prediction">15 Minutes</h3>
+        <p class="prediction-details-desc padded">
+          Scaling operation allocation (5m),<br>Config propagation (10m)
+        </p>
+      </div>
+    </div>
+
+  </div>
+  
+  <div class="footer-engine-label">
+    Cortex-AI Prediction Engine v3.1
+  </div>
+{% endblock %}

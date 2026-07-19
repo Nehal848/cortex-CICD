@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% set active_page = "logs" %}
+
+{% block title %}Logs | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">Logs</h1>
+      <p class="page-subtitle">View and search logs from your applications and system.</p>
+    </div>
+  </header>
+
+  <!-- Filter & Search Toolbar Container -->
+  <div class="dashboard-card logs-filter-card">
+    <div class="logs-filter-toolbar">
+      <div class="filter-left-switches">
+        <span class="toolbar-label">Filters:</span>
+        <button class="log-filter-btn info active" id="filter-info"><i class="fa-solid fa-circle-info"></i> Info</button>
+        <button class="log-filter-btn warning active" id="filter-warning"><i class="fa-solid fa-triangle-exclamation"></i> Warning</button>
+        <button class="log-filter-btn error active" id="filter-error"><i class="fa-solid fa-circle-xmark"></i> Error</button>
+      </div>
+      <div class="filter-right-search">
+        <div class="logs-search-wrapper">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" placeholder="Search Logs" class="logs-search-input" id="logs-search">
+        </div>
+        <button class="btn btn-outline-gold" id="btn-clear-filters"><i class="fa-solid fa-arrow-rotate-left"></i> Clear Filters</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logs Table Panel -->
+  <div class="dashboard-card history-panel">
+    <table class="history-table logs-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Level</th>
+          <th>Message</th>
+          <th>Service</th>
+          <th>Details</th>
+          <th class="right-align"></th>
+        </tr>
+      </thead>
+      <tbody id="logs-table-body">
+        <tr>
+          <td class="time-col">12:30:20.123</td>
+          <td><span class="log-badge badge-info">INFO</span></td>
+          <td class="log-msg">Application Started</td>
+          <td class="service-col">frontend-service</td>
+          <td class="details-col">—</td>
+          <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+        </tr>
+        <tr>
+          <td class="time-col">12:30:21.456</td>
+          <td><span class="log-badge badge-info">INFO</span></td>
+          <td class="log-msg">Request Received</td>
+          <td class="service-col">frontend-service</td>
+          <td class="details-col">GET /api/v1/users</td>
+          <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+        </tr>
+        <tr>
+          <td class="time-col">12:30:22.789</td>
+          <td><span class="log-badge badge-error">ERROR</span></td>
+          <td class="log-msg error-text">Database Timeout</td>
+          <td class="service-col">payment-service</td>
+          <td class="details-col">Connection timed out after 10s</td>
+          <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+        </tr>
+        <tr>
+          <td class="time-col">12:30:23.012</td>
+          <td><span class="log-badge badge-info">INFO</span></td>
+          <td class="log-msg">Auto Restart Triggered</td>
+          <td class="service-col">self-healing-service</td>
+          <td class="details-col">Restarting pod payment-service-7d9f8c</td>
+          <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+        </tr>
+        <tr>
+          <td class="time-col">12:30:25.345</td>
+          <td><span class="log-badge badge-info">INFO</span></td>
+          <td class="log-msg">Application Running</td>
+          <td class="service-col">payment-service</td>
+          <td class="details-col">Pod is healthy and running</td>
+          <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- Table Footer / Pagination -->
+    <div class="table-pagination-footer">
+      <span class="pagination-summary">Showing 1 to 5 of 125 logs</span>
+      <div class="pagination-controls">
+        <button class="btn btn-pagination"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="btn btn-pagination active">1</button>
+        <button class="btn btn-pagination">2</button>
+        <button class="btn btn-pagination">3</button>
+        <span class="pagination-ellipsis">...</span>
+        <button class="btn btn-pagination">25</button>
+        <button class="btn btn-pagination"><i class="fa-solid fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+{% endblock %}

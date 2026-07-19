@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% set active_page = "kubernetes" %}
+
+{% block title %}Kubernetes | Cortex CI/CD{% endblock %}
+
+{% block content %}
+  <!-- Page Header -->
+  <header class="page-header-row">
+    <div class="page-title-section">
+      <h1 class="page-title-serif">Kubernetes</h1>
+      <p class="page-subtitle">Overview of your Kubernetes clusters and resources.</p>
+    </div>
+    <div class="page-actions-section">
+      <select class="select-dropdown flex-dropdown-width">
+        <option>All Clusters</option>
+        <option>cortex-ci-cluster</option>
+      </select>
+      <button class="btn-refresh"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </header>
+
+  <!-- Cluster Status Section -->
+  <section class="cluster-status-section">
+    <h2 class="section-subtitle-serif">Cluster Status</h2>
+    
+    <div class="k8s-status-grid">
+      
+      <!-- 1. Running Pods -->
+      <div class="dashboard-card status-stat-card">
+        <div class="status-card-top">
+          <div class="status-card-icon purple"><i class="fa-solid fa-box"></i></div>
+          <div class="status-card-data">
+            <div class="status-card-label">Running Pods</div>
+            <div class="status-card-value">8</div>
+          </div>
+        </div>
+        <div class="status-card-progress">
+          <div class="progress-bar-bg"><div class="progress-bar-fill purple" style="width: 100%;"></div></div>
+        </div>
+      </div>
+
+      <!-- 2. Healthy Pods -->
+      <div class="dashboard-card status-stat-card">
+        <div class="status-card-top">
+          <div class="status-card-icon green"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="status-card-data">
+            <div class="status-card-label">Healthy Pods</div>
+            <div class="status-card-value">8</div>
+          </div>
+        </div>
+        <div class="status-card-progress">
+          <div class="progress-bar-bg"><div class="progress-bar-fill green" style="width: 100%;"></div></div>
+        </div>
+      </div>
+
+      <!-- 3. Restarted Pods -->
+      <div class="dashboard-card status-stat-card">
+        <div class="status-card-top">
+          <div class="status-card-icon gold"><i class="fa-solid fa-arrows-rotate"></i></div>
+          <div class="status-card-data">
+            <div class="status-card-label">Restarted Pods</div>
+            <div class="status-card-value">3</div>
+          </div>
+        </div>
+        <div class="status-card-progress">
+          <div class="progress-bar-bg"><div class="progress-bar-fill gold" style="width: 37%;"></div></div>
+        </div>
+      </div>
+
+      <!-- 4. Failed Pods -->
+      <div class="dashboard-card status-stat-card">
+        <div class="status-card-top">
+          <div class="status-card-icon red"><i class="fa-solid fa-circle-xmark"></i></div>
+          <div class="status-card-data">
+            <div class="status-card-label">Failed Pods</div>
+            <div class="status-card-value">0</div>
+          </div>
+        </div>
+        <div class="status-card-progress">
+          <div class="progress-bar-bg"><div class="progress-bar-fill red" style="width: 0%;"></div></div>
+        </div>
+      </div>
+
+      <!-- 5. CPU Usage Dial -->
+      <div class="dashboard-card status-stat-card dial-card">
+        <div class="dial-container">
+          <svg class="mini-progress-svg" viewBox="0 0 36 36">
+            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="circle-fill cpu" stroke-dasharray="62, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          </svg>
+          <div class="dial-value">62%</div>
+        </div>
+        <div class="status-card-label text-center">CPU Usage</div>
+      </div>
+
+      <!-- 6. Memory Usage Dial -->
+      <div class="dashboard-card status-stat-card dial-card">
+        <div class="dial-container">
+          <svg class="mini-progress-svg" viewBox="0 0 36 36">
+            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            <path class="circle-fill memory" stroke-dasharray="55, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+          </svg>
+          <div class="dial-value">55%</div>
+        </div>
+        <div class="status-card-label text-center">Memory Usage</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Cluster Overview & Pods Overview Split Layout -->
+  <section class="cluster-split-grid">
+    
+    <!-- Left Column: Cluster Overview -->
+    <div class="dashboard-card cluster-info-card">
+      <h3 class="section-subtitle-serif border-bottom">Cluster Overview</h3>
+      <div class="cluster-info-list">
+        
+        <div class="info-list-item">
+          <i class="fa-solid fa-network-wired info-icon"></i>
+          <span class="info-label">Cluster Name</span>
+          <span class="info-value">cortex-ci-cluster</span>
+        </div>
+        
+        <div class="info-list-item">
+          <i class="fa-solid fa-dharmachakra info-icon"></i>
+          <span class="info-label">Kubernetes Version</span>
+          <span class="info-value">v1.28.3</span>
+        </div>
+        
+        <div class="info-list-item">
+          <i class="fa-solid fa-server info-icon"></i>
+          <span class="info-label">Nodes</span>
+          <span class="info-value">3</span>
+        </div>
+        
+        <div class="info-list-item">
+          <i class="fa-solid fa-folder-open info-icon"></i>
+          <span class="info-label">Namespaces</span>
+          <span class="info-value">12</span>
+        </div>
+        
+        <div class="info-list-item">
+          <i class="fa-solid fa-clock info-icon"></i>
+          <span class="info-label">Uptime</span>
+          <span class="info-value"><span class="uptime-dot"></span> 15d 6h 24m</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Right Column: Pods Overview -->
+    <div class="dashboard-card pods-overview-card">
+      <div class="card-header-with-search">
+        <h3 class="section-subtitle-serif">Pods Overview</h3>
+        <div class="pods-search-wrapper">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" placeholder="Search pods..." class="pods-search-input" id="pod-search">
+        </div>
+      </div>
+
+      <table class="history-table pods-table">
+        <thead>
+          <tr>
+            <th>Pod Name</th>
+            <th>Namespace</th>
+            <th>Status</th>
+            <th>Restarts</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>Age</th>
+            <th class="right-align"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="pod-name-col">frontend-service-7d9f8c</td>
+            <td>default</td>
+            <td><span class="pod-status-indicator status-running">Running</span></td>
+            <td>0</td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">45%</span>
+                <div class="minibar-bg"><div class="minibar-fill purple" style="width: 45%;"></div></div>
+              </div>
+            </td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">32%</span>
+                <div class="minibar-bg"><div class="minibar-fill gold" style="width: 32%;"></div></div>
+              </div>
+            </td>
+            <td>2h 15m</td>
+            <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+          </tr>
+          
+          <tr>
+            <td class="pod-name-col">payment-service-6c7b9d</td>
+            <td>default</td>
+            <td><span class="pod-status-indicator status-running">Running</span></td>
+            <td>0</td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">32%</span>
+                <div class="minibar-bg"><div class="minibar-fill purple" style="width: 32%;"></div></div>
+              </div>
+            </td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">28%</span>
+                <div class="minibar-bg"><div class="minibar-fill gold" style="width: 28%;"></div></div>
+              </div>
+            </td>
+            <td>1h 45m</td>
+            <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+          </tr>
+
+          <tr>
+            <td class="pod-name-col">user-service-5f6a7b</td>
+            <td>default</td>
+            <td><span class="pod-status-indicator status-running">Running</span></td>
+            <td>1</td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">22%</span>
+                <div class="minibar-bg"><div class="minibar-fill purple" style="width: 22%;"></div></div>
+              </div>
+            </td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">18%</span>
+                <div class="minibar-bg"><div class="minibar-fill gold" style="width: 18%;"></div></div>
+              </div>
+            </td>
+            <td>3h 10m</td>
+            <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+          </tr>
+
+          <tr>
+            <td class="pod-name-col">inventory-service-8e9d0f</td>
+            <td>default</td>
+            <td><span class="pod-status-indicator status-running">Running</span></td>
+            <td>0</td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">35%</span>
+                <div class="minibar-bg"><div class="minibar-fill purple" style="width: 35%;"></div></div>
+              </div>
+            </td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">26%</span>
+                <div class="minibar-bg"><div class="minibar-fill gold" style="width: 26%;"></div></div>
+              </div>
+            </td>
+            <td>2h 50m</td>
+            <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+          </tr>
+
+          <tr>
+            <td class="pod-name-col">order-service-4a5b6c</td>
+            <td>default</td>
+            <td><span class="pod-status-indicator status-running">Running</span></td>
+            <td>0</td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">28%</span>
+                <div class="minibar-bg"><div class="minibar-fill purple" style="width: 28%;"></div></div>
+              </div>
+            </td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">22%</span>
+                <div class="minibar-bg"><div class="minibar-fill gold" style="width: 22%;"></div></div>
+              </div>
+            </td>
+            <td>1h 30m</td>
+            <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+          </tr>
+
+          <tr>
+            <td class="pod-name-col">notification-service-3b4c5d</td>
+            <td>default</td>
+            <td><span class="pod-status-indicator status-running">Running</span></td>
+            <td>2</td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">15%</span>
+                <div class="minibar-bg"><div class="minibar-fill purple" style="width: 15%;"></div></div>
+              </div>
+            </td>
+            <td>
+              <div class="pod-perf-row">
+                <span class="val">12%</span>
+                <div class="minibar-bg"><div class="minibar-fill gold" style="width: 12%;"></div></div>
+              </div>
+            </td>
+            <td>4h 05m</td>
+            <td class="right-align"><button class="icon-btn-more"><i class="fa-solid fa-ellipsis-vertical"></i></button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <!-- Cluster Health Footer Banner -->
+  <div class="dashboard-card cluster-health-banner">
+    <div class="banner-left">
+      <div class="health-icon bg-green"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="banner-text">
+        <h4 class="banner-title">All systems are healthy</h4>
+        <p class="banner-desc">Your Kubernetes cluster is operating normally.</p>
+      </div>
+    </div>
+    <button class="btn btn-outline-purple" id="btn-view-alerts"><i class="fa-solid fa-bell"></i> View Alerts</button>
+  </div>
+{% endblock %}

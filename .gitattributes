@@ -1,4 +1,0 @@
-# Exclude all frontend UI assets from GitHub language statistics
-*.css linguist-vendored=true
-*.js linguist-vendored=true
-*.html linguist-vendored=true

@@ -1,0 +1,3 @@
+# Ignore frontend static assets from GitHub language statistics
+app/static/css/* linguist-vendored
+app/static/js/* linguist-vendored

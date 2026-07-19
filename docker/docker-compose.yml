@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+  cortex-api:
+    build: 
+      context: ../
+      dockerfile: docker/Dockerfile.api
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - ../app:/app/app
+
+  cortex-worker:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile.worker
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Allow worker to spin up sandboxes
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ../monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

@@ -1,0 +1,31 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "panels": [
+    {
+      "title": "Pipeline Success Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(cortex_pipeline_success_total[5m])) / sum(rate(cortex_pipeline_run_total[5m])) * 100",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 30,
+  "title": "Cortex CI/CD Health Dashboard",
+  "tags": ["cortex", "cicd", "healing"]
+}

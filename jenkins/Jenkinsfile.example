@@ -1,0 +1,47 @@
+pipeline {
+    agent any
+
+    options {
+        // Automatically inject Cortex webhook logic on failures
+        timeout(time: 1, unit: 'HOURS')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'make build'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                cortexWatch {
+                    sh 'make test'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'make deploy'
+            }
+        }
+    }
+
+    post {
+        failure {
+            // Cortex intercepts the failure and extracts logs
+            cortexReportFailure(
+                webhook: 'http://cortex-api.cortex-system.svc.cluster.local/api/pipeline/run',
+                extractLogs: true,
+                autoHeal: true
+            )
+        }
+    }
+}

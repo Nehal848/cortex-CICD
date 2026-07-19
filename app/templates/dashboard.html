@@ -24,7 +24,7 @@
     <div class="dashboard-card">
       <div>
         <div class="card-label">Total Deployments</div>
-        <div class="card-value" id="val-deployments">12</div>
+        <div class="card-value" id="val-deployments">{{ stats.total_deps }}</div>
         <div class="card-meta"><i class="fa-solid fa-arrow-trend-up"></i> +18% this week</div>
       </div>
       <div class="card-visual-container">
@@ -87,7 +87,7 @@
     <div class="dashboard-card">
       <div>
         <div class="card-label">Pipeline Success Rate</div>
-        <div class="card-value" id="val-success-rate">96.8%</div>
+        <div class="card-value" id="val-success-rate">{{ stats.success_rate }}%</div>
         <div class="card-meta">Target threshold: 95.0%</div>
       </div>
       <div class="card-visual-container">
@@ -99,7 +99,7 @@
     <div class="dashboard-card">
       <div>
         <div class="card-label">Failed Builds</div>
-        <div class="card-value" id="failed-builds-val">2</div>
+        <div class="card-value" id="failed-builds-val">{{ stats.failed }}</div>
         <div class="card-meta" id="failed-builds-meta">Auto-rollback active</div>
       </div>
       <div class="card-visual-container">
@@ -111,7 +111,7 @@
     <div class="dashboard-card">
       <div>
         <div class="card-label">Total Healed Runs</div>
-        <div class="card-value" id="healing-actions-val">15</div>
+        <div class="card-value" id="healing-actions-val">{{ stats.healed }}</div>
         <div class="card-meta">Success rate: 100%</div>
       </div>
       <div class="card-visual-container">
@@ -251,22 +251,22 @@
             </thead>
             <tbody>
               {% for run in runs %}
-              <tr id="run-row-{{ run.id }}">
+              <tr id="run-row-{{ run.run_id }}">
                 <td class="timeline-col">
                   <div class="timeline-line"></div>
-                  <div class="timeline-node {% if run.status == 'Success' %}success{% elif run.status == 'Failed' %}failed{% else %}healed{% endif %}" id="node-{{ run.id }}">
-                    <i class="fa-solid {% if run.status == 'Success' %}fa-check{% elif run.status == 'Failed' %}fa-xmark{% else %}fa-bolt{% endif %}" id="icon-{{ run.id }}"></i>
+                  <div class="timeline-node {% if run.status == 'Success' %}success{% elif run.status == 'Failed' %}failed{% else %}healed{% endif %}" id="node-{{ run.run_id }}">
+                    <i class="fa-solid {% if run.status == 'Success' %}fa-check{% elif run.status == 'Failed' %}fa-xmark{% else %}fa-bolt{% endif %}" id="icon-{{ run.run_id }}"></i>
                   </div>
                 </td>
                 <td>
                   <div class="deploy-info">
-                    <span class="deploy-name">{{ run.id }} ({{ run.branch }})</span>
+                    <span class="deploy-name">{{ run.run_id }} ({{ run.branch }})</span>
                     <span class="deploy-time">{{ run.timestamp }}</span>
                   </div>
                 </td>
                 <td class="deploy-date">{{ run.triggered_by }}</td>
                 <td class="right-align">
-                  <span class="run-status-pill {% if run.status == 'Success' %}status-success{% elif run.status == 'Failed' %}status-failed{% else %}status-healed{% endif %}" id="pill-{{ run.id }}">
+                  <span class="run-status-pill {% if run.status == 'Success' %}status-success{% elif run.status == 'Failed' %}status-failed{% else %}status-healed{% endif %}" id="pill-{{ run.run_id }}">
                     {{ run.status }}
                   </span>
                 </td>

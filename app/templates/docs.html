@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation — Cortex CI/CD</title>
+  <meta name="description" content="Comprehensive guide to deploying, configuring and operating the Cortex Self-Healing CI/CD platform.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.1') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- Top Navbar (matches landing page style) -->
+  <nav class="navbar">
+    <div class="logo">
+      <a href="{{ url_for('main.index') }}" style="display:flex;align-items:center;gap:0.6rem;">
+        <i class="fa-solid fa-microchip"></i>
+        Cortex CI/CD
+      </a>
+    </div>
+    <ul class="nav-links">
+      <li><a href="{{ url_for('main.index') }}" class="nav-item">Home</a></li>
+      <li><a href="{{ url_for('main.index') }}#features" class="nav-item">Features</a></li>
+      <li><a href="{{ url_for('main.dashboard') }}" class="nav-item">Dashboard</a></li>
+      <li><a href="{{ url_for('main.docs') }}" class="nav-item active">Documentation</a></li>
+      <li><a href="{{ url_for('main.login') }}" class="nav-item btn btn-secondary">Sign In</a></li>
+    </ul>
+  </nav>
+
+  <!-- Docs content wrapper -->
+  <div style="max-width: 1200px; margin: 0 auto; padding: 6rem 2rem 4rem;">
+<style>
+  /* ── Docs Page Layout ───────────────────────────── */
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 252px 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  @media (max-width: 1024px) {
+    .docs-layout { grid-template-columns: 1fr; }
+    .docs-toc    { display: none; }
+  }
+
+  /* ── Table of Contents ──────────────────────────── */
+  .docs-toc {
+    position: sticky;
+    top: 1.5rem;
+    background: rgba(20, 18, 26, 0.72);
+    border: 1px solid rgba(229, 193, 138, 0.16);
+    border-top-color: rgba(229, 193, 138, 0.35);
+    border-radius: 14px;
+    padding: 1.5rem 1.1rem;
+    backdrop-filter: blur(18px);
+  }
+  .toc-heading {
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-gold-muted);
+    margin-bottom: 0.9rem;
+    padding-left: 0.6rem;
+  }
+  .toc-list { list-style: none; display: flex; flex-direction: column; gap: 0.1rem; }
+  .toc-section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(163, 156, 168, 0.45);
+    padding: 0.7rem 0.6rem 0.2rem;
+    font-weight: 600;
+  }
+  .toc-item a {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: var(--transition-smooth);
+  }
+  .toc-item a i { width: 15px; font-size: 0.78rem; color: var(--text-gold-muted); }
+  .toc-item a:hover, .toc-item a.toc-active {
+    background: rgba(229, 193, 138, 0.08);
+    color: var(--text-gold-light);
+  }
+
+  /* ── Main Content ───────────────────────────────── */
+  .docs-content { min-width: 0; }
+
+  .docs-hero {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(229, 193, 138, 0.12);
+  }
+  .docs-version-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(192, 132, 252, 0.1);
+    border: 1px solid rgba(192, 132, 252, 0.28);
+    color: #c084fc;
+    padding: 0.28rem 0.85rem;
+    border-radius: 100px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .docs-page-title {
+    font-family: 'Lora', serif;
+    font-size: 2.3rem;
+    font-weight: 700;
+    color: var(--text-gold-light);
+    margin-bottom: 0.75rem;
+    text-shadow: 0 2px 16px rgba(229, 193, 138, 0.2);
+  }
+  .docs-page-subtitle {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    max-width: 680px;
+  }
+
+  /* ── Sections ───────────────────────────────────── */
+  .docs-section { margin-bottom: 3rem; scroll-margin-top: 2rem; }
+  .docs-section-title {
+    font-family: 'Lora', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-gold-light);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+  .docs-section-title i { font-size: 1.05rem; color: #2dd4bf; filter: drop-shadow(0 0 5px rgba(45,212,191,0.4)); }
+  .docs-divider {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(229, 193, 138, 0.25) 0%, transparent 100%);
+    margin-bottom: 1.4rem;
+  }
+  .docs-prose {
+    color: #c0bac6;
+    font-size: 0.94rem;
+    line-height: 1.8;
+    margin-bottom: 1.2rem;
+  }
+
+  /* ── Feature card grid ──────────────────────────── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (max-width: 640px) { .feat-grid { grid-template-columns: 1fr; } }
+  .feat-card {
+    background: rgba(20, 18, 26, 0.65);
+    border: 1px solid rgba(229, 193, 138, 0.13);
+    border-top-color: rgba(229, 193, 138, 0.28);
+    border-radius: 12px;
+    padding: 1.2rem 1.3rem;
+    transition: var(--transition-smooth);
+  }
+  .feat-card:hover {
+    border-color: rgba(229, 193, 138, 0.38);
+    background: rgba(29, 26, 36, 0.8);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 18px rgba(229,193,138,0.08);
+  }
+  .feat-icon {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; margin-bottom: 0.8rem;
+  }
+  .feat-icon.purple { background: rgba(192,132,252,0.12); border: 1px solid rgba(192,132,252,0.3); color: #c084fc; }
+  .feat-icon.teal   { background: rgba(45,212,191,0.12);  border: 1px solid rgba(45,212,191,0.3);  color: #2dd4bf; }
+  .feat-icon.gold   { background: rgba(229,193,138,0.12); border: 1px solid rgba(229,193,138,0.3); color: #f3e8d2; }
+  .feat-icon.red    { background: rgba(248,113,113,0.1);  border: 1px solid rgba(248,113,113,0.28); color: #f87171; }
+  .feat-icon.blue   { background: rgba(96,165,250,0.1);   border: 1px solid rgba(96,165,250,0.28);  color: #60a5fa; }
+  .feat-icon.green  { background: rgba(52,211,153,0.1);   border: 1px solid rgba(52,211,153,0.28);  color: #34d399; }
+  .feat-title { font-weight: 600; font-size: 0.93rem; color: var(--text-gold-light); margin-bottom: 0.3rem; }
+  .feat-desc  { font-size: 0.83rem; color: var(--text-secondary); line-height: 1.6; }
+
+  /* ── Code block ─────────────────────────────────── */
+  .docs-code {
+    background: rgba(10, 9, 14, 0.92);
+    border: 1px solid rgba(229, 193, 138, 0.12);
+    border-left: 3px solid rgba(45, 212, 191, 0.5);
+    border-radius: 8px;
+    padding: 1.05rem 1.3rem;
+    margin: 0.9rem 0 1.4rem;
+    overflow-x: auto;
+  }
+  .docs-code pre {
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 0.83rem;
+    color: #c8f0e8;
+    line-height: 1.72;
+    white-space: pre;
+  }
+  .cc { color: #6e7f78; }
+  .ck { color: #c084fc; }
+  .cs { color: #fcd34d; }
+  .cv { color: #34d399; }
+
+  /* ── Steps ──────────────────────────────────────── */
+  .steps-list { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.4rem; }
+  .step-item  { display: flex; gap: 1rem; align-items: flex-start; }
+  .step-num {
+    flex-shrink: 0; width: 26px; height: 26px;
+    border-radius: 50%;
+    background: rgba(229,193,138,0.1);
+    border: 1px solid rgba(229,193,138,0.3);
+    color: var(--text-gold-muted);
+    font-size: 0.78rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 0.05rem;
+  }
+  .step-body strong { display: block; color: var(--text-gold-light); font-size: 0.88rem; margin-bottom: 0.18rem; }
+  .step-body p      { color: var(--text-secondary); font-size: 0.83rem; line-height: 1.6; }
+
+  /* ── Callout boxes ──────────────────────────────── */
+  .callout {
+    display: flex; gap: 0.85rem;
+    padding: 0.95rem 1.2rem;
+    border-radius: 9px;
+    margin: 1.1rem 0;
+    font-size: 0.87rem;
+    line-height: 1.65;
+  }
+  .callout i { font-size: 0.95rem; flex-shrink: 0; margin-top: 0.1rem; }
+  .callout.info    { background: rgba(96,165,250,0.07);  border: 1px solid rgba(96,165,250,0.22);  color: #93c5fd; }
+  .callout.info i  { color: #60a5fa; }
+  .callout.warn    { background: rgba(245,158,11,0.07);  border: 1px solid rgba(245,158,11,0.22);  color: #fde68a; }
+  .callout.warn i  { color: #f59e0b; }
+  .callout.success { background: rgba(52,211,153,0.07);  border: 1px solid rgba(52,211,153,0.22);  color: #6ee7b7; }
+  .callout.success i { color: #34d399; }
+
+  /* ── Inline code ────────────────────────────────── */
+  .ic {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.83em;
+    background: rgba(45,212,191,0.08);
+    border: 1px solid rgba(45,212,191,0.2);
+    color: #2dd4bf;
+    padding: 0.08em 0.42em;
+    border-radius: 4px;
+  }
+
+  /* ── Healing strategy grid ──────────────────────── */
+  .heal-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+    margin-bottom: 1.4rem;
+  }
+  @media (max-width: 768px) { .heal-grid { grid-template-columns: repeat(2, 1fr); } }
+  .heal-card {
+    background: rgba(20,18,26,0.5);
+    border: 1px solid rgba(229,193,138,0.12);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: var(--transition-smooth);
+  }
+  .heal-card:hover { border-color: rgba(229,193,138,0.3); background: rgba(29,26,36,0.7); }
+  .heal-icon  { font-size: 1.3rem; margin-bottom: 0.55rem; }
+  .heal-name  { font-weight: 600; font-size: 0.87rem; color: var(--text-gold-light); margin-bottom: 0.28rem; }
+  .heal-desc  { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.55; }
+
+  /* ── API table ──────────────────────────────────── */
+  .api-table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.85rem; }
+  .api-table th {
+    text-align: left;
+    color: var(--text-gold-muted);
+    font-weight: 600;
+    font-size: 0.76rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    padding: 0.52rem 0.85rem;
+    border-bottom: 1px solid rgba(229,193,138,0.15);
+    background: rgba(229,193,138,0.04);
+  }
+  .api-table td {
+    padding: 0.68rem 0.85rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text-secondary);
+    vertical-align: top;
+  }
+  .api-table tr:last-child td { border-bottom: none; }
+  .mb { display: inline-block; padding: 0.18rem 0.55rem; border-radius: 4px; font-family: 'Fira Code',monospace; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.04em; }
+  .mb.get    { background: rgba(52,211,153,0.15);  color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .mb.post   { background: rgba(96,165,250,0.15);  color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+  .ep { font-family: 'Fira Code', monospace; color: var(--text-gold-light); font-size: 0.83rem; }
+
+  /* ── Quick links ────────────────────────────────── */
+  .quick-links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(229,193,138,0.12);
+  }
+  @media (max-width: 640px) { .quick-links { grid-template-columns: 1fr; } }
+  .ql-card {
+    display: flex; align-items: center; gap: 0.85rem;
+    background: rgba(20,18,26,0.55);
+    border: 1px solid rgba(229,193,138,0.13);
+    border-radius: 10px;
+    padding: 0.95rem 1.1rem;
+    text-decoration: none;
+    transition: var(--transition-smooth);
+  }
+  .ql-card:hover { border-color: rgba(229,193,138,0.38); background: rgba(29,26,36,0.8); transform: translateY(-2px); }
+  .ql-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0; }
+  .ql-icon.teal   { background: rgba(45,212,191,0.1);  border: 1px solid rgba(45,212,191,0.28);  color: #2dd4bf; }
+  .ql-icon.purple { background: rgba(192,132,252,0.1); border: 1px solid rgba(192,132,252,0.28); color: #c084fc; }
+  .ql-icon.gold   { background: rgba(229,193,138,0.1); border: 1px solid rgba(229,193,138,0.28); color: #f3e8d2; }
+  .ql-text strong { display: block; color: var(--text-gold-light); font-size: 0.88rem; margin-bottom: 0.12rem; }
+  .ql-text span   { color: var(--text-secondary); font-size: 0.79rem; }
+</style>
+
+<div class="docs-layout">
+
+  <!-- Table of Contents -->
+  <aside class="docs-toc">
+    <div class="toc-heading"><i class="fa-solid fa-list-ul" style="margin-right:0.4rem"></i>Contents</div>
+    <ul class="toc-list">
+      <li class="toc-section-label">Getting Started</li>
+      <li class="toc-item"><a href="#overview" id="toc-overview"><i class="fa-solid fa-house-chimney"></i>Overview</a></li>
+      <li class="toc-item"><a href="#quickstart" id="toc-quickstart"><i class="fa-solid fa-bolt"></i>Quick Start</a></li>
+      <li class="toc-item"><a href="#architecture" id="toc-architecture"><i class="fa-solid fa-sitemap"></i>Architecture</a></li>
+      <li class="toc-section-label">Core Features</li>
+      <li class="toc-item"><a href="#pipeline" id="toc-pipeline"><i class="fa-solid fa-rocket"></i>CI/CD Pipeline</a></li>
+      <li class="toc-item"><a href="#self-healing" id="toc-self-healing"><i class="fa-solid fa-gears"></i>Self-Healing</a></li>
+      <li class="toc-item"><a href="#ai-prediction" id="toc-ai-prediction"><i class="fa-solid fa-brain"></i>AI Prediction</a></li>
+      <li class="toc-item"><a href="#kubernetes" id="toc-kubernetes"><i class="fa-solid fa-dharmachakra"></i>Kubernetes</a></li>
+      <li class="toc-item"><a href="#monitoring" id="toc-monitoring"><i class="fa-solid fa-chart-simple"></i>Monitoring</a></li>
+      <li class="toc-section-label">Reference</li>
+      <li class="toc-item"><a href="#api" id="toc-api"><i class="fa-solid fa-plug"></i>API Reference</a></li>
+      <li class="toc-item"><a href="#config" id="toc-config"><i class="fa-solid fa-sliders"></i>Configuration</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Docs Content -->
+  <div class="docs-content">
+
+    <!-- Hero -->
+    <div class="docs-hero">
+      <div class="docs-version-badge"><span class="pulse-dot"></span> v2.4.1 — Latest</div>
+      <h1 class="docs-page-title">Cortex CI/CD Documentation</h1>
+      <p class="docs-page-subtitle">
+        Comprehensive guide to deploying, configuring, and operating the Cortex Self-Healing CI/CD platform.
+        Connect repositories, tune AI prediction models, and automate incident response end-to-end.
+      </p>
+    </div>
+
+    <!-- Overview -->
+    <section class="docs-section" id="overview">
+      <h2 class="docs-section-title"><i class="fa-solid fa-house-chimney"></i> Overview</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        <strong style="color:var(--text-gold-light)">Cortex CI/CD</strong> is an AI-augmented, self-healing
+        continuous integration and delivery platform built for modern cloud-native teams. It combines a real-time
+        pipeline orchestrator, an ML failure-prediction engine, and automated remediation — all surfaced through
+        a single unified dashboard.
+      </p>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-icon purple"><i class="fa-solid fa-robot"></i></div>
+          <div class="feat-title">AI-Powered Diagnostics</div>
+          <div class="feat-desc">Predicts build failures before they occur using historical pipeline telemetry and ensemble ML models.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon teal"><i class="fa-solid fa-gears"></i></div>
+          <div class="feat-title">Autonomous Self-Healing</div>
+          <div class="feat-desc">Automatically retries, reroutes, or rolls back failed deployments based on configurable healing strategies.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon gold"><i class="fa-solid fa-dharmachakra"></i></div>
+          <div class="feat-title">Kubernetes-Native</div>
+          <div class="feat-desc">Deep integration with Kubernetes workloads — monitor pods, nodes, and services directly from the dashboard.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon blue"><i class="fa-solid fa-bell"></i></div>
+          <div class="feat-title">Intelligent Alerting</div>
+          <div class="feat-desc">Noise-reduced alert routing via configurable severity thresholds, channels, and auto-silence policies.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Start -->
+    <section class="docs-section" id="quickstart">
+      <h2 class="docs-section-title"><i class="fa-solid fa-bolt"></i> Quick Start</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">Get Cortex running locally in under five minutes.</p>
+      <div class="steps-list">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Clone the repository</strong>
+            <p>Check out the source from GitHub and navigate into the project directory.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Create a virtual environment</strong>
+            <p>Isolate dependencies using Python's built-in <span class="ic">venv</span> module.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Install dependencies</strong>
+            <p>Install all required packages from <span class="ic">requirements.txt</span>.</p>
+          </div>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Launch the server</strong>
+            <p>Run the Flask development server — the dashboard is available on port <span class="ic">5000</span>.</p>
+          </div>
+        </div>
+      </div>
+      <div class="docs-code">
+        <pre><span class="cc"># 1. Clone</span>
+git clone https://github.com/CortexCICD/Self-Healing-CI-CD.git
+<span class="ck">cd</span> Self-Healing-CI-CD
+
+<span class="cc"># 2. Virtual environment</span>
+python -m venv venv
+<span class="ck">source</span> venv/bin/activate   <span class="cc"># Windows: venv\Scripts\activate</span>
+
+<span class="cc"># 3. Install deps</span>
+pip install -r requirements.txt
+
+<span class="cc"># 4. Run</span>
+python app/app.py</pre>
+      </div>
+      <div class="callout info">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Default dev credentials: <strong>admin / admin</strong>. Change these before any production deployment.</span>
+      </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="docs-section" id="architecture">
+      <h2 class="docs-section-title"><i class="fa-solid fa-sitemap"></i> Architecture</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        Cortex follows a modular monolith design. The Flask web layer handles HTTP routing and template rendering.
+        Business logic — pipeline orchestration, self-healing decisions, and AI inference — lives in the
+        <span class="ic">agents/</span> and <span class="ic">ml/</span> packages. Kubernetes integration is managed
+        through the official Python client library.
+      </p>
+      <div class="docs-code">
+        <pre>Self-Healing-CI-CD/
+├── <span class="ck">app/</span>              <span class="cc"># Flask web application</span>
+│   ├── routes/       <span class="cc"># Blueprint route handlers</span>
+│   ├── templates/    <span class="cc"># Jinja2 HTML templates</span>
+│   └── static/       <span class="cc"># CSS, JS, assets</span>
+├── <span class="ck">agents/</span>           <span class="cc"># Self-healing orchestration agents</span>
+├── <span class="ck">ml/</span>               <span class="cc"># ML model training &amp; inference</span>
+├── <span class="ck">monitoring/</span>       <span class="cc"># Prometheus / Grafana configs</span>
+├── <span class="ck">kubernetes/</span>       <span class="cc"># Helm charts &amp; manifests</span>
+├── <span class="ck">jenkins/</span>          <span class="cc"># Jenkinsfile pipeline definitions</span>
+└── <span class="ck">docker/</span>           <span class="cc"># Dockerfile &amp; compose configs</span></pre>
+      </div>
+    </section>
+
+    <!-- Pipeline -->
+    <section class="docs-section" id="pipeline">
+      <h2 class="docs-section-title"><i class="fa-solid fa-rocket"></i> CI/CD Pipeline</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        The pipeline view provides a real-time overview of all runs across your connected repositories.
+        Each run progresses through discrete stages: <em>Clone → Build → Test → Deploy → Verify</em>.
+        Cortex injects a pre-flight AI health check between <strong>Build</strong> and <strong>Test</strong>
+        to flag high-risk changes before they reach production.
+      </p>
+      <div class="callout success">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>Runs marked <strong>Healed</strong> indicate the self-healing engine intervened and successfully remediated a failure without human action.</span>
+      </div>
+      <p class="docs-prose">
+        Trigger a run manually from <strong>CI/CD Pipeline → Trigger Run</strong>, or via the
+        <a href="#api" style="color:var(--text-gold-light)">REST API</a>.
+      </p>
+    </section>
+
+    <!-- Self-Healing -->
+    <section class="docs-section" id="self-healing">
+      <h2 class="docs-section-title"><i class="fa-solid fa-gears"></i> Self-Healing Engine</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        The engine monitors all pipeline stages and Kubernetes workloads continuously. When an anomaly is detected —
+        crashed pod, failing test suite, or timed-out deployment — it selects the optimal remediation strategy
+        based on failure type and severity score.
+      </p>
+      <div class="heal-grid">
+        <div class="heal-card">
+          <div class="heal-icon">🔄</div>
+          <div class="heal-name">Auto Retry</div>
+          <div class="heal-desc">Re-runs the failed stage up to a configurable max with exponential backoff.</div>
+        </div>
+        <div class="heal-card">
+          <div class="heal-icon">⏪</div>
+          <div class="heal-name">Rollback</div>
+          <div class="heal-desc">Reverts the deployment to the last known healthy image tag automatically.</div>
+        </div>
+        <div class="heal-card">
+          <div class="heal-icon">📦</div>
+          <div class="heal-name">Pod Restart</div>
+          <div class="heal-desc">Terminates and reschedules unhealthy pods across available nodes.</div>
+        </div>
+        <div class="heal-card">
+          <div class="heal-icon">⚖️</div>
+          <div class="heal-name">Scale Up</div>
+          <div class="heal-desc">Temporarily increases replica count when high load is the root cause.</div>
+        </div>
+        <div class="heal-card">
+          <div class="heal-icon">🔀</div>
+          <div class="heal-name">Traffic Reroute</div>
+          <div class="heal-desc">Shifts ingress to a canary or stable service while the primary heals.</div>
+        </div>
+        <div class="heal-card">
+          <div class="heal-icon">🔔</div>
+          <div class="heal-name">Escalate</div>
+          <div class="heal-desc">When automated strategies fail, creates a P1 alert and notifies on-call engineers.</div>
+        </div>
+      </div>
+      <div class="callout warn">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Rollback is destructive for stateful workloads. Ensure PersistentVolume backup policies are configured before enabling automatic rollbacks on database services.</span>
+      </div>
+    </section>
+
+    <!-- AI Prediction -->
+    <section class="docs-section" id="ai-prediction">
+      <h2 class="docs-section-title"><i class="fa-solid fa-brain"></i> AI Prediction Engine</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        Cortex uses a gradient-boosted ensemble trained on historical pipeline telemetry to predict build failures
+        up to <strong>3 stages ahead</strong>. Features include code-change velocity, test-flakiness ratio,
+        dependency delta, and infrastructure resource trends.
+      </p>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-icon purple"><i class="fa-solid fa-chart-line"></i></div>
+          <div class="feat-title">Risk Score</div>
+          <div class="feat-desc">Every run receives a 0–100 risk score. Runs above the threshold (default 70) trigger pre-emptive diagnostics.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon green"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+          <div class="feat-title">Root Cause Analysis</div>
+          <div class="feat-desc">SHAP explainability surfaces the top contributing factors to any predicted failure in human-readable form.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kubernetes -->
+    <section class="docs-section" id="kubernetes">
+      <h2 class="docs-section-title"><i class="fa-solid fa-dharmachakra"></i> Kubernetes Integration</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        Cortex connects to your cluster via the standard <span class="ic">KUBECONFIG</span> environment variable
+        or an in-cluster service account. The Kubernetes view shows live pod status, node resource utilisation,
+        and deployment history.
+      </p>
+      <div class="docs-code">
+        <pre><span class="cc"># Point Cortex at your cluster</span>
+<span class="ck">export</span> KUBECONFIG=<span class="cs">~/.kube/config</span>
+
+<span class="cc"># Verify connectivity</span>
+kubectl cluster-info</pre>
+      </div>
+      <div class="callout info">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>For in-cluster deployments the service account needs <span class="ic">get</span>, <span class="ic">list</span>, <span class="ic">watch</span>, and <span class="ic">patch</span> on <span class="ic">pods</span>, <span class="ic">deployments</span>, and <span class="ic">services</span>.</span>
+      </div>
+    </section>
+
+    <!-- Monitoring -->
+    <section class="docs-section" id="monitoring">
+      <h2 class="docs-section-title"><i class="fa-solid fa-chart-simple"></i> Monitoring &amp; Observability</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        Cortex exposes a <span class="ic">/metrics</span> endpoint compatible with Prometheus scraping.
+        Pre-built Grafana dashboards in <span class="ic">monitoring/</span> visualise pipeline throughput,
+        MTTR, heal rates, and Kubernetes resource saturation.
+      </p>
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-icon red"><i class="fa-solid fa-fire"></i></div>
+          <div class="feat-title">Prometheus Metrics</div>
+          <div class="feat-desc">Counters and gauges for pipeline runs, failures, heal events, and latency histograms.</div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-icon teal"><i class="fa-solid fa-wave-square"></i></div>
+          <div class="feat-title">Grafana Dashboards</div>
+          <div class="feat-desc">Import ready-made JSON dashboards from the <span class="ic">monitoring/</span> directory into your Grafana instance.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- API Reference -->
+    <section class="docs-section" id="api">
+      <h2 class="docs-section-title"><i class="fa-solid fa-plug"></i> API Reference</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        All endpoints are served under <span class="ic">http://&lt;host&gt;:5000</span>. Authentication uses
+        session cookies established via <span class="ic">POST /login</span>.
+      </p>
+      <table class="api-table">
+        <thead>
+          <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/dashboard</td><td>Main dashboard — telemetry summary and recent runs.</td></tr>
+          <tr><td><span class="mb post">POST</span></td><td class="ep">/api/pipeline/run</td><td>Trigger a new pipeline run. Returns run metadata including ID and status.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/pipeline</td><td>All pipeline runs, statuses, and stage breakdowns.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/monitoring</td><td>Real-time infrastructure and service health metrics.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/kubernetes</td><td>Kubernetes cluster workload status and node utilisation.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/prediction</td><td>AI prediction dashboard — risk scores and contributing factors.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/self-healing</td><td>Self-healing audit log — events, strategies applied, and outcomes.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/alerts</td><td>Active and historical alerts with severity and routing metadata.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/docs</td><td>This documentation page.</td></tr>
+          <tr><td><span class="mb post">POST</span></td><td class="ep">/login</td><td>Authenticate and establish a session. Body: <span class="ic">username</span>, <span class="ic">password</span>.</td></tr>
+          <tr><td><span class="mb get">GET</span></td><td class="ep">/logout</td><td>Terminate the current session and redirect to login.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Configuration -->
+    <section class="docs-section" id="config">
+      <h2 class="docs-section-title"><i class="fa-solid fa-sliders"></i> Configuration</h2>
+      <div class="docs-divider"></div>
+      <p class="docs-prose">
+        Core settings are configured via environment variables. A <span class="ic">.env</span> file at the
+        project root is loaded automatically at startup.
+      </p>
+      <div class="docs-code">
+        <pre><span class="cc"># .env — Application configuration</span>
+
+<span class="ck">FLASK_SECRET_KEY</span>=<span class="cs">your-production-secret-key</span>
+<span class="ck">FLASK_ENV</span>=<span class="cs">production</span>
+
+<span class="cc"># Kubernetes</span>
+<span class="ck">KUBECONFIG</span>=<span class="cs">/etc/cortex/kubeconfig</span>
+
+<span class="cc"># ML model</span>
+<span class="ck">ML_MODEL_PATH</span>=<span class="cs">ml/models/failure_predictor.pkl</span>
+<span class="ck">ML_RISK_THRESHOLD</span>=<span class="cv">70</span>
+
+<span class="cc"># Self-healing policy</span>
+<span class="ck">HEALING_MAX_RETRIES</span>=<span class="cv">3</span>
+<span class="ck">HEALING_BACKOFF_SECONDS</span>=<span class="cv">30</span>
+<span class="ck">HEALING_ENABLE_ROLLBACK</span>=<span class="cv">true</span>
+
+<span class="cc"># Alerting channels</span>
+<span class="ck">ALERT_SLACK_WEBHOOK</span>=<span class="cs">https://hooks.slack.com/services/...</span>
+<span class="ck">ALERT_EMAIL_SMTP</span>=<span class="cs">smtp.yourdomain.com</span></pre>
+      </div>
+      <div class="callout warn">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Never commit <span class="ic">.env</span> to version control. Add it to <span class="ic">.gitignore</span> and use your CI/CD secrets manager for production deployments.</span>
+      </div>
+    </section>
+
+    <!-- Quick Links -->
+    <div class="quick-links">
+      <a href="{{ url_for('main.pipeline') }}" class="ql-card">
+        <div class="ql-icon teal"><i class="fa-solid fa-rocket"></i></div>
+        <div class="ql-text"><strong>CI/CD Pipeline</strong><span>View &amp; trigger runs</span></div>
+      </a>
+      <a href="{{ url_for('main.self_healing') }}" class="ql-card">
+        <div class="ql-icon purple"><i class="fa-solid fa-gears"></i></div>
+        <div class="ql-text"><strong>Self-Healing</strong><span>Healing event log</span></div>
+      </a>
+      <a href="{{ url_for('main.settings') }}" class="ql-card">
+        <div class="ql-icon gold"><i class="fa-solid fa-sliders"></i></div>
+        <div class="ql-text"><strong>Settings</strong><span>Configure the platform</span></div>
+      </a>
+    </div>
+
+  </div><!-- /docs-content -->
+</div><!-- /docs-layout -->
+
+<script>
+  // Highlight active TOC link on scroll
+  const sections = document.querySelectorAll('.docs-section');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.toc-item a').forEach(l => l.classList.remove('toc-active'));
+        const link = document.querySelector(`#toc-${entry.target.id}`);
+        if (link) link.classList.add('toc-active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -70% 0px' });
+  sections.forEach(s => observer.observe(s));
+</script>
+</div><!-- /content wrapper -->
+</body>
+</html>

@@ -5,81 +5,172 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Cortex CI/CD | Self-Healing Pipeline</title>
   <meta name="description" content="Next-generation CI/CD pipeline equipped with autonomous self-healing capabilities powered by agentic AI.">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.5') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
+<body class="elegant-body">
+  
+  <!-- Aurora Background Effects & Floating Tech Icons -->
+  <div class="aurora-bg">
+    <div class="aurora-blob blob-1"></div>
+    <div class="aurora-blob blob-2"></div>
+    
+    <!-- Floating Tech Icons -->
+    <i class="fa-brands fa-docker floating-tech-icon tech-icon-1"></i>
+    <i class="fa-brands fa-aws floating-tech-icon tech-icon-2"></i>
+    <i class="fa-brands fa-github floating-tech-icon tech-icon-3"></i>
+    <i class="fa-brands fa-python floating-tech-icon tech-icon-4"></i>
+    <i class="fa-brands fa-linux floating-tech-icon tech-icon-5"></i>
+    <i class="fa-brands fa-node-js floating-tech-icon tech-icon-6"></i>
+  </div>
 
   <!-- Navigation -->
-  <nav class="navbar">
+  <nav class="navbar elegant-nav">
     <div class="logo">
       <i class="fa-solid fa-microchip"></i>
-      Cortex CI/CD
+      Cortex
     </div>
     <ul class="nav-links">
-      <li><a href="#" class="nav-item active">Home</a></li>
+      <li><a href="#" class="nav-item active">Overview</a></li>
       <li><a href="#features" class="nav-item">Features</a></li>
       <li><a href="{{ url_for('main.dashboard') }}" class="nav-item">Dashboard</a></li>
-      <li><a href="#" class="nav-item">Documentation</a></li>
-      <li><a href="{{ url_for('main.login') }}" class="nav-item btn btn-secondary">Sign In</a></li>
+      <li><a href="{{ url_for('main.docs') }}" class="nav-item">Docs</a></li>
+      <li><a href="{{ url_for('main.login') }}" class="nav-item btn elegant-btn-secondary">Sign In</a></li>
     </ul>
   </nav>
 
-  <!-- Hero Section -->
-  <header class="hero">
-    <div class="hero-badge">
-      <span class="pulse-dot"></span>
-      Autonomous Agent v1.0.4 Active
+  <!-- Elegant Hero Section -->
+  <header class="elegant-hero">
+    
+    <div class="hero-text-content">
+      <div class="elegant-badge">
+        <span class="badge-dot"></span>
+        Cortex AI Engine 2.0
+      </div>
+      <h1 class="elegant-title">
+        Deploy without fear.<br>
+        <span class="elegant-gradient">We heal the rest.</span>
+      </h1>
+      <p class="elegant-subtitle">
+        Cortex intercepts CI/CD failures in real-time, diagnoses the root cause, and autonomously writes the patch before you even notice.
+      </p>
+      <div class="hero-actions">
+        <a href="{{ url_for('main.login') }}" class="btn elegant-btn-primary">
+          Start Deploying <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <a href="{{ url_for('main.docs') }}" class="btn elegant-btn-outline">
+          Read Documentation
+        </a>
+      </div>
     </div>
-    <h1 class="hero-title">
-      Deploy Without Fear.<br>
-      <span>Self-Healing CI/CD</span> is here.
-    </h1>
-    <p class="hero-subtitle">
-      Automate the diagnostics, debugging, and patching of pipeline build failures. Powered by agentic AI that acts as an on-call software engineer.
-    </p>
-    <div class="hero-actions">
-      <a href="{{ url_for('main.login') }}" class="btn btn-primary">
-        Launch Dashboard
-        <i class="fa-solid fa-arrow-right"></i>
-      </a>
-      <a href="#" class="btn btn-secondary">
-        Read the Docs
-      </a>
+
+    <!-- The Glassmorphism Pipeline Graphic -->
+    <div class="elegant-glass-container">
+      <div class="glass-header">
+        <div class="glass-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="glass-title">pipeline.cortex.yml</div>
+      </div>
+      
+      <div class="elegant-pipeline">
+        <!-- SVG Connections -->
+        <svg class="elegant-svg-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path class="elegant-line base-path" d="M 10,50 L 40,50 L 60,20 L 90,20" />
+          <path class="elegant-line error-path" d="M 40,50 L 60,80" />
+          <path class="elegant-line heal-path" d="M 60,80 L 90,80" />
+          
+          <!-- Moving Pulses -->
+          <circle r="1" fill="#fff" class="pulse-normal">
+            <animateMotion dur="4s" repeatCount="indefinite" path="M 10,50 L 40,50 L 60,20 L 90,20" />
+          </circle>
+          <circle r="1" fill="#f87171" class="pulse-error">
+            <animateMotion dur="4s" repeatCount="indefinite" path="M 40,50 L 60,80" />
+          </circle>
+          <circle r="1" fill="#a78bfa" class="pulse-heal">
+            <animateMotion dur="4s" repeatCount="indefinite" begin="2s" path="M 60,80 L 90,80" />
+          </circle>
+        </svg>
+
+        <!-- Elegant Nodes -->
+        <div class="e-node e-build" style="top: 50%; left: 10%;">Build</div>
+        <div class="e-node e-test" style="top: 50%; left: 40%;">Test</div>
+        
+        <div class="e-node e-deploy-success" style="top: 20%; left: 90%;">Deploy</div>
+        <div class="e-node e-fail" style="top: 80%; left: 60%;">Fail</div>
+        <div class="e-node e-heal" style="top: 80%; left: 90%;">Patch</div>
+      </div>
     </div>
+
   </header>
 
-  <!-- Features Grid -->
-  <section class="features-grid" id="features">
-    <div class="feature-card glass-panel">
-      <div class="feature-icon">
-        <i class="fa-solid fa-bug-slash"></i>
-      </div>
-      <h3>Autonomous Diagnostics</h3>
-      <p>Instantly extracts stack traces, build logs, and environment configurations to pinpoint the root cause of pipeline failures.</p>
-    </div>
-
-    <div class="feature-card glass-panel">
-      <div class="feature-icon">
-        <i class="fa-solid fa-wand-magic-sparkles"></i>
-      </div>
-      <h3>AI-Powered Patches</h3>
-      <p>Generates target code patches to fix imports, configuration settings, or test parameters, executing automatic corrections in sandbox branches.</p>
-    </div>
-
-    <div class="feature-card glass-panel">
-      <div class="feature-icon">
-        <i class="fa-solid fa-terminal"></i>
-      </div>
-      <h3>Real-time Agent Console</h3>
-      <p>Track the step-by-step reasoning, tool invocations, and code diff applications of our AI agents live on a glowing dashboard terminal.</p>
+  <!-- Elegant Logos -->
+  <section class="elegant-logos">
+    <p>TRUSTED BY MODERN TEAMS INTEGRATING WITH</p>
+    <div class="logo-row">
+      <span><i class="fa-brands fa-github"></i> GitHub</span>
+      <span><i class="fa-brands fa-gitlab"></i> GitLab</span>
+      <span><i class="fa-brands fa-docker"></i> Docker</span>
+      <span><i class="fa-brands fa-aws"></i> AWS</span>
+      <span><i class="fa-solid fa-cloud"></i> Terraform</span>
     </div>
   </section>
 
+  <!-- Elegant Features -->
+  <section class="elegant-features" id="features">
+    <a href="{{ url_for('main.self_healing') }}" class="e-feature-card">
+      <div class="e-icon"><i class="fa-solid fa-bug-slash"></i></div>
+      <h3>Autonomous Diagnostics</h3>
+      <p>Cortex instantly extracts stack traces and build logs to pinpoint exactly why your pipeline broke.</p>
+    </a>
+    <a href="{{ url_for('main.prediction') }}" class="e-feature-card">
+      <div class="e-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+      <h3>AI-Powered Patches</h3>
+      <p>Agents generate target code patches and test them in isolated sandbox branches automatically.</p>
+    </a>
+    <a href="{{ url_for('main.pipeline') }}" class="e-feature-card">
+      <div class="e-icon"><i class="fa-solid fa-terminal"></i></div>
+      <h3>Real-time Agent Console</h3>
+      <p>Track the step-by-step reasoning and code diff applications of our AI agents live.</p>
+    </a>
+  </section>
+
   <!-- Footer -->
-  <footer class="text-center p-2 mt-4" style="color: var(--text-secondary); font-size: 0.85rem; border-top: 1px solid var(--border-color); padding: 2rem 0;">
-    &copy; 2026 Cortex DevOps Platforms. Built with glassmorphism and premium design templates.
+  <footer class="elegant-footer">
+    <div class="footer-content">
+      <div class="footer-logo">
+        <i class="fa-solid fa-microchip"></i> Cortex CI/CD
+      </div>
+      <div class="footer-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Status</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 Cortex DevOps Platforms. Designed with precision.
+    </div>
   </footer>
 
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
+  <script>
+    // 3D Glassmorphism Container Tilt
+    VanillaTilt.init(document.querySelector(".elegant-glass-container"), {
+      max: 10,
+      speed: 400,
+      glare: true,
+      "max-glare": 0.2,
+      perspective: 1000
+    });
+
+    // 3D Feature Cards
+    VanillaTilt.init(document.querySelectorAll(".e-feature-card"), {
+      max: 15,
+      speed: 400,
+      glare: true,
+      "max-glare": 0.1,
+    });
+  </script>
 </body>
 </html>

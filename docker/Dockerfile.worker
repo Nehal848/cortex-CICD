@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Workers need docker CLI to spin up sandbox environments for testing patches
+RUN apt-get update && apt-get install -y docker.io git && rm -rf /var/lib/apt/lists/*
+
+COPY . .
+
+# Start the Celery or RQ worker
+CMD ["python", "worker.py"]

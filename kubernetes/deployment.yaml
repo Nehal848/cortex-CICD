@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cortex-api
+  namespace: cortex-system
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cortex-api
+  template:
+    metadata:
+      labels:
+        app: cortex-api
+    spec:
+      containers:
+      - name: cortex-api
+        image: cortex/api:latest
+        ports:
+        - containerPort: 5000
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 20
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cortex-worker
+  namespace: cortex-system
+spec:
+  replicas: 5 # Heavy lifting done by agents
+  selector:
+    matchLabels:
+      app: cortex-worker
+  template:
+    metadata:
+      labels:
+        app: cortex-worker
+    spec:
+      serviceAccountName: cortex-healer-sa
+      containers:
+      - name: cortex-worker
+        image: cortex/worker:latest
+        env:
+        - name: REDIS_URL
+          value: "redis://redis-svc:6379/0"

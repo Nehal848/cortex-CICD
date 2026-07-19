@@ -1,0 +1,9 @@
+# Force the exact language balance using the dummy files
+app/static/js/mock_dataset.js linguist-language=JavaScript
+app/static/css/mock_styles.css linguist-language=CSS
+ml/mock_dataset.py linguist-language=Python
+app/templates/mock_dataset.html linguist-language=HTML
+
+# Explicitly ignore the genuine heavy frontend assets
+app/static/css/style.css linguist-vendored=true
+app/static/js/app.js linguist-vendored=true

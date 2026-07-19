@@ -1,3 +1,4 @@
-# Ignore frontend static assets from GitHub language statistics
-app/static/css/* linguist-vendored
-app/static/js/* linguist-vendored
+# Exclude all frontend UI assets from GitHub language statistics
+*.css linguist-vendored
+*.js linguist-vendored
+*.html linguist-vendored

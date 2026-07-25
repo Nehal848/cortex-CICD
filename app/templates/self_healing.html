@@ -3,199 +3,437 @@
 
 {% block title %}Self-Healing | Cortex CI/CD{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* ── Flow diagram ─────────────────────────────────────── */
+  .flow-diagram { display: flex; align-items: center; flex-wrap: wrap; gap: 0;
+    padding: 1.25rem 1.5rem; justify-content: center; }
+  .flow-step { display: flex; flex-direction: column; align-items: center; gap: .35rem;
+    opacity: .35; transition: opacity .4s, filter .4s; }
+  .flow-step.active { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
+  .flow-step-icon { width: 48px; height: 48px; border-radius: 12px; display: flex;
+    align-items: center; justify-content: center; font-size: 1.15rem; }
+  .flow-step-label { font-size: .67rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); white-space: nowrap; }
+  .flow-step.active .flow-step-label { color: var(--text-primary); }
+  .flow-arrow { font-size: .75rem; color: rgba(255,255,255,.2); padding: 0 .4rem;
+    align-self: center; margin-bottom: 1.1rem; }
+  .flow-step.active .flow-arrow { color: var(--accent-purple); }
+  /* step colours */
+  .fs-red    .flow-step-icon { background: rgba(239,68,68,.15);  color: #f87171; }
+  .fs-purple .flow-step-icon { background: rgba(168,85,247,.15); color: #c084fc; }
+  .fs-blue   .flow-step-icon { background: rgba(59,130,246,.15); color: #60a5fa; }
+  .fs-amber  .flow-step-icon { background: rgba(245,158,11,.15); color: #fbbf24; }
+  .fs-cyan   .flow-step-icon { background: rgba(6,182,212,.15);  color: #22d3ee; }
+  .fs-green  .flow-step-icon { background: rgba(34,197,94,.15);  color: #4ade80; }
+  .fs-orange .flow-step-icon { background: rgba(249,115,22,.15); color: #fb923c; }
+
+  /* ── Trigger panel ───────────────────────────────────── */
+  .heal-trigger-layout { display: grid; grid-template-columns: 380px 1fr; gap: 1.5rem; }
+  .trigger-form-card { padding: 1.5rem; }
+  .trigger-form-card h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--text-muted); margin-bottom: 1rem; font-family: var(--font-sans); }
+  .form-field { margin-bottom: .85rem; }
+  .form-field label { display: block; font-size: .75rem; color: var(--text-muted); margin-bottom: .3rem; }
+  .form-input { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    color: var(--text-primary); border-radius: 8px; padding: .55rem .8rem; font-size: .82rem;
+    transition: border-color .2s; box-sizing: border-box; }
+  .form-input:focus { outline: none; border-color: var(--accent-purple); }
+  .form-input option { background: #1e1e2e; }
+  .btn-trigger-heal { width: 100%; padding: .75rem; border: none; border-radius: 8px;
+    background: linear-gradient(135deg, #7c3aed, #2563eb); color: #fff;
+    font-weight: 600; font-size: .85rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    transition: opacity .2s; }
+  .btn-trigger-heal:hover { opacity: .85; }
+  .btn-trigger-heal:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── Result console ───────────────────────────────────── */
+  .console-card { padding: 1.5rem; }
+  .console-card h3 { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--text-muted); margin-bottom: 1rem; font-family: var(--font-sans); }
+  .console-body { background: rgba(0,0,0,.3); border-radius: 10px; padding: 1rem 1.25rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: .78rem; min-height: 180px;
+    max-height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,.07); }
+  .console-line { padding: .18rem 0; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--text-muted); }
+  .console-line.info    { color: #60a5fa; }
+  .console-line.success { color: #4ade80; }
+  .console-line.error   { color: #f87171; }
+  .console-line.warn    { color: #fbbf24; }
+  .console-placeholder { color: rgba(255,255,255,.2); font-style: italic; }
+  .outcome-badge { display: inline-flex; align-items: center; gap: .4rem;
+    padding: .35rem .8rem; border-radius: 999px; font-size: .78rem; font-weight: 600;
+    margin-top: .75rem; }
+  .outcome-resolved  { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+  .outcome-escalated { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.25); }
+  .outcome-failed    { background: rgba(239,68,68,.15);  color: #f87171; border: 1px solid rgba(239,68,68,.25); }
+
+  /* ── History table ───────────────────────────────────── */
+  .history-header { display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1rem; flex-wrap: wrap; gap: .5rem; }
+  .history-header h2 { font-size: .85rem; font-weight: 600; color: var(--text-primary); }
+  .filter-pills { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .filter-pill-btn { padding: .3rem .75rem; border-radius: 999px; font-size: .72rem; font-weight: 500;
+    cursor: pointer; border: 1px solid rgba(255,255,255,.12); background: transparent;
+    color: var(--text-muted); transition: background .2s, color .2s; }
+  .filter-pill-btn.active, .filter-pill-btn:hover { background: rgba(255,255,255,.08); color: var(--text-primary); }
+  .history-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+  .history-table th { text-align: left; padding: .6rem .75rem; font-size: .68rem;
+    text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,.07); font-family: var(--font-sans); }
+  .history-table td { padding: .65rem .75rem; border-bottom: 1px solid rgba(255,255,255,.05);
+    color: var(--text-secondary); vertical-align: middle; }
+  .history-table tr:hover td { background: rgba(255,255,255,.025); }
+  .strategy-pill { display: inline-flex; align-items: center; gap: .35rem;
+    padding: .25rem .65rem; border-radius: 999px; font-size: .71rem; font-weight: 500; }
+  .sp-retry    { background: rgba(59,130,246,.12);  color: #60a5fa; }
+  .sp-restart  { background: rgba(34,197,94,.12);   color: #4ade80; }
+  .sp-rollback { background: rgba(245,158,11,.12);  color: #fbbf24; }
+  .sp-scale    { background: rgba(6,182,212,.12);   color: #22d3ee; }
+  .sp-escalate { background: rgba(239,68,68,.12);   color: #f87171; }
+  .outcome-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: .3rem; }
+  .dot-resolved  { background: #4ade80; }
+  .dot-escalated { background: #fbbf24; }
+  .dot-failed    { background: #f87171; }
+  .btn-heal-row  { padding: .3rem .7rem; border: 1px solid rgba(255,255,255,.1); border-radius: 6px;
+    background: rgba(255,255,255,.04); color: var(--text-muted); font-size: .72rem; cursor: pointer;
+    transition: background .15s; }
+  .btn-heal-row:hover { background: rgba(255,255,255,.09); color: var(--text-primary); }
+  .empty-history { text-align: center; padding: 2rem; color: var(--text-muted); font-size: .85rem; }
+  .section-card { padding: 1.5rem; display: block; }
+  .trigger-form-card { padding: 1.5rem; display: block; }
+  .console-card { padding: 1.5rem; display: block; }
+</style>
+{% endblock %}
+
 {% block content %}
-  <!-- Page Header -->
-  <header class="page-header-row">
-    <div class="page-title-section">
-      <h1 class="page-title-serif">Self-Healing</h1>
-      <p class="page-subtitle">AI-powered automated recovery for your applications.</p>
+
+<!-- ── Page Header ─────────────────────────────────────────────── -->
+<header class="page-header-row">
+  <div class="page-title-section">
+    <h1 class="page-title-serif">Self-Healing Engine</h1>
+    <p class="page-subtitle">AI-powered autonomous recovery — detect, diagnose, heal.</p>
+  </div>
+  <div class="page-actions-section">
+    <button class="btn-refresh" id="btn-refresh-history" title="Refresh history"><i class="fa-solid fa-rotate"></i></button>
+  </div>
+</header>
+
+<!-- ── Healing Flow Diagram ───────────────────────────────────── -->
+<div class="dashboard-card" style="margin-bottom:1.5rem">
+  <div class="flow-diagram" id="flow-diagram">
+    <div class="flow-step fs-red" id="fs-1">
+      <div class="flow-step-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+      <div class="flow-step-label">Failure Detected</div>
     </div>
-  </header>
+    <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+    <div class="flow-step fs-purple" id="fs-2">
+      <div class="flow-step-icon"><i class="fa-solid fa-brain"></i></div>
+      <div class="flow-step-label">AI Analysis</div>
+    </div>
+    <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+    <div class="flow-step fs-blue" id="fs-3">
+      <div class="flow-step-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+      <div class="flow-step-label">Root Cause</div>
+    </div>
+    <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+    <div class="flow-step fs-amber" id="fs-4">
+      <div class="flow-step-icon"><i class="fa-solid fa-list-check"></i></div>
+      <div class="flow-step-label">Choose Strategy</div>
+    </div>
+    <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+    <div class="flow-step fs-cyan" id="fs-5">
+      <div class="flow-step-icon"><i class="fa-solid fa-gears"></i></div>
+      <div class="flow-step-label">Execute</div>
+    </div>
+    <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+    <div class="flow-step fs-green" id="fs-6">
+      <div class="flow-step-icon"><i class="fa-solid fa-shield-check"></i></div>
+      <div class="flow-step-label">Health Check</div>
+    </div>
+    <div class="flow-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+    <div class="flow-step fs-orange" id="fs-7">
+      <div class="flow-step-icon"><i class="fa-solid fa-bell"></i></div>
+      <div class="flow-step-label">Notify / Done</div>
+    </div>
+  </div>
+</div>
 
-  <!-- Horizontal Pipeline Flow Block -->
-  <div class="dashboard-card pipeline-flow-card">
-    <div class="pipeline-flow-container">
-      
-      <!-- Card 1: Detected Failure -->
-      <div class="flow-step-card border-red">
-        <div class="flow-card-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="flow-card-info">
-          <div class="flow-card-label">Detected Failure</div>
-          <div class="flow-card-value">Container Crash</div>
-        </div>
-      </div>
+<!-- ── Trigger Panel + Console ───────────────────────────────── -->
+<div class="heal-trigger-layout" style="margin-bottom:1.5rem">
 
-      <div class="flow-connector"><i class="fa-solid fa-arrow-right"></i></div>
+  <!-- Form -->
+  <div class="dashboard-card trigger-form-card">
+    <h3><i class="fa-solid fa-bolt" style="margin-right:.4rem;color:#fbbf24"></i>Trigger Healing</h3>
+    <div class="form-field">
+      <label>Pipeline Run</label>
+      <select class="form-input" id="heal-run-select">
+        <option value="">— Select a failed run —</option>
+        {% for event in events %}
+        <option value="{{ event.run_id }}">{{ event.run_id }} · {{ event.failure_type }}</option>
+        {% endfor %}
+        <!-- Fallback: always show common runs -->
+        <option value="RUN-4816">RUN-4816 · Dependency Resolution (Failed)</option>
+        <option value="RUN-4812">RUN-4812 · Build Script Error (Failed)</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Pod Name <span style="color:var(--text-muted)">(optional override)</span></label>
+      <input class="form-input" id="heal-pod" type="text" placeholder="e.g. cortex-api-pod">
+    </div>
+    <div class="form-field">
+      <label>Deployment Name <span style="color:var(--text-muted)">(optional override)</span></label>
+      <input class="form-input" id="heal-dep" type="text" placeholder="e.g. cortex-api">
+    </div>
+    <div class="form-field">
+      <label>Failure Type Override <span style="color:var(--text-muted)">(optional)</span></label>
+      <select class="form-input" id="heal-failure-type">
+        <option value="">— Auto-detect —</option>
+        <option>Test Suite Timeout</option>
+        <option>OOM — Pod Evicted</option>
+        <option>Dependency Resolution</option>
+        <option>Build Script Error</option>
+        <option>High CPU Saturation</option>
+        <option>Network Timeout</option>
+        <option>Liveness Probe Fail</option>
+        <option>CrashLoopBackOff</option>
+      </select>
+    </div>
+    <button class="btn-trigger-heal" id="btn-do-heal" disabled>
+      <i class="fa-solid fa-gears"></i>
+      <span>Execute Self-Healing</span>
+    </button>
+  </div>
 
-      <!-- Card 2: Action Taken -->
-      <div class="flow-step-card border-green">
-        <div class="flow-card-icon green"><i class="fa-solid fa-arrows-rotate"></i></div>
-        <div class="flow-card-info">
-          <div class="flow-card-label">Action Taken</div>
-          <div class="flow-card-value success-color"><i class="fa-solid fa-check"></i> Restart Pod</div>
-        </div>
-      </div>
+  <!-- Console output -->
+  <div class="dashboard-card console-card">
+    <h3><i class="fa-solid fa-terminal" style="margin-right:.4rem;color:var(--accent-purple)"></i>Healing Console</h3>
+    <div class="console-body" id="console-body">
+      <div class="console-placeholder">[ Cortex Self-Healing Engine — awaiting trigger... ]</div>
+    </div>
+    <div id="outcome-badge-container" style="margin-top:.75rem"></div>
+  </div>
 
-      <div class="flow-connector"><i class="fa-solid fa-arrow-right"></i></div>
+</div>
 
-      <!-- Card 3: Status -->
-      <div class="flow-step-card border-green">
-        <div class="flow-card-icon green"><i class="fa-solid fa-shield-halved"></i></div>
-        <div class="flow-card-info">
-          <div class="flow-card-label">Status</div>
-          <div class="flow-card-value success-color">Recovered</div>
-        </div>
-      </div>
-
-      <div class="flow-connector"><i class="fa-solid fa-arrow-right"></i></div>
-
-      <!-- Card 4: Recovery Time -->
-      <div class="flow-step-card border-purple">
-        <div class="flow-card-icon purple"><i class="fa-solid fa-clock"></i></div>
-        <div class="flow-card-info">
-          <div class="flow-card-label">Recovery Time</div>
-          <div class="flow-card-value purple-color">18 Seconds</div>
-        </div>
-      </div>
-
+<!-- ── Recovery History ───────────────────────────────────────── -->
+<div class="dashboard-card section-card">
+  <div class="history-header">
+    <h2><i class="fa-solid fa-clock-rotate-left" style="margin-right:.4rem;color:var(--accent-purple)"></i>Recovery History</h2>
+    <div class="filter-pills">
+      <button class="filter-pill-btn active" data-filter="all">All</button>
+      <button class="filter-pill-btn" data-filter="resolved">Resolved</button>
+      <button class="filter-pill-btn" data-filter="escalated">Escalated</button>
+      <button class="filter-pill-btn" data-filter="failed">Failed</button>
     </div>
   </div>
 
-  <!-- Recovery History Section -->
-  <section class="recovery-history-section">
-    <div class="history-section-header">
-      <h2 class="section-subtitle-serif">Recovery History</h2>
-      
-      <div class="history-filter-controls">
-        <select class="select-dropdown">
-          <option>All Types</option>
-          <option>Restart</option>
-          <option>Rollback</option>
-          <option>Scale Up</option>
-        </select>
-        <span class="filter-pill green-dot"><span class="dot green"></span> Restart</span>
-        <span class="filter-pill orange-dot"><span class="dot orange"></span> Rollback</span>
-        <span class="filter-pill blue-dot"><span class="dot blue"></span> Scale Up</span>
-      </div>
-    </div>
+  <table class="history-table" id="history-table">
+    <thead>
+      <tr>
+        <th>Run ID</th>
+        <th>Failure Type</th>
+        <th>Strategy</th>
+        <th>Outcome</th>
+        <th>Time</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="history-tbody">
+      {% if events %}
+        {% for e in events %}
+        <tr data-outcome="{{ e.outcome | lower }}">
+          <td><span style="font-family:monospace;color:var(--accent-purple)">{{ e.run_id }}</span></td>
+          <td>{{ e.failure_type }}</td>
+          <td>
+            {% set sc = {'Auto Retry': 'sp-retry', 'Pod Restart': 'sp-restart', 'Rollback': 'sp-rollback',
+                         'Scale Up': 'sp-scale', 'Escalate': 'sp-escalate'} %}
+            <span class="strategy-pill {{ sc.get(e.strategy, 'sp-retry') }}">
+              {% if e.strategy == 'Auto Retry' %}<i class="fa-solid fa-arrows-rotate"></i>
+              {% elif e.strategy == 'Pod Restart' %}<i class="fa-solid fa-power-off"></i>
+              {% elif e.strategy == 'Rollback' %}<i class="fa-solid fa-rotate-left"></i>
+              {% elif e.strategy == 'Scale Up' %}<i class="fa-solid fa-arrow-up"></i>
+              {% else %}<i class="fa-solid fa-bell"></i>{% endif %}
+              {{ e.strategy }}
+            </span>
+          </td>
+          <td>
+            {% set oc = {'Resolved': 'dot-resolved', 'Escalated': 'dot-escalated', 'Failed': 'dot-failed'} %}
+            <span class="outcome-dot {{ oc.get(e.outcome, 'dot-failed') }}"></span>{{ e.outcome }}
+          </td>
+          <td style="color:var(--text-muted);font-size:.75rem">{{ e.timestamp }}</td>
+          <td>
+            <button class="btn-heal-row" onclick="prefillHeal('{{ e.run_id }}')">
+              <i class="fa-solid fa-bolt"></i> Re-Heal
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="6" class="empty-history">No healing events recorded yet.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
 
-    <!-- Timeline Wrapper -->
-    <div class="timeline-container">
-      
-      <!-- Day Group: Today -->
-      <div class="day-group">
-        <div class="day-marker">
-          <i class="fa-solid fa-calendar-days"></i>
-          <span>Today</span>
-        </div>
-        
-        <div class="timeline-cards-row">
-          
-          <!-- Timeline Card 1 -->
-          <div class="timeline-event-card">
-            <div class="card-timeline-pin green-pin"></div>
-            <div class="card-timestamp">10:32 AM</div>
-            <div class="timeline-card-body">
-              <div class="event-card-header">
-                <div class="event-icon bg-green"><i class="fa-solid fa-arrows-rotate"></i></div>
-                <div class="event-title-block">
-                  <h4 class="event-action-title">Restart</h4>
-                  <p class="event-action-desc">Pod frontend-service-7d9f8c was restarted automatically.</p>
-                </div>
-              </div>
-              <div class="event-card-status-badge green-badge">
-                <i class="fa-solid fa-circle-check"></i> Recovered
-              </div>
-            </div>
-          </div>
+{% endblock %}
 
-          <!-- Timeline Card 2 -->
-          <div class="timeline-event-card">
-            <div class="card-timeline-pin orange-pin"></div>
-            <div class="card-timestamp">11:15 AM</div>
-            <div class="timeline-card-body">
-              <div class="event-card-header">
-                <div class="event-icon bg-orange"><i class="fa-solid fa-rotate-left"></i></div>
-                <div class="event-title-block">
-                  <h4 class="event-action-title">Rollback</h4>
-                  <p class="event-action-desc">Rolled back deployment v1.2.3 to v1.2.2 due to failure.</p>
-                </div>
-              </div>
-              <div class="event-card-status-badge green-badge">
-                <i class="fa-solid fa-circle-check"></i> Recovered
-              </div>
-            </div>
-          </div>
+{% block extra_js %}
+<script>
+(function () {
+  const runSelect    = document.getElementById('heal-run-select');
+  const btnHeal      = document.getElementById('btn-do-heal');
+  const consoleBody  = document.getElementById('console-body');
+  const outcomeBadge = document.getElementById('outcome-badge-container');
+  const filterBtns   = document.querySelectorAll('.filter-pill-btn');
+  const flowSteps    = document.querySelectorAll('#flow-diagram .flow-step');
 
-          <!-- Timeline Card 3 -->
-          <div class="timeline-event-card">
-            <div class="card-timeline-pin blue-pin"></div>
-            <div class="card-timestamp">12:05 PM</div>
-            <div class="timeline-card-body">
-              <div class="event-card-header">
-                <div class="event-icon bg-blue"><i class="fa-solid fa-circle-arrow-up"></i></div>
-                <div class="event-title-block">
-                  <h4 class="event-action-title">Scale Up</h4>
-                  <p class="event-action-desc">Increased replicas from 2 to 4 due to high CPU usage.</p>
-                </div>
-              </div>
-              <div class="event-card-status-badge green-badge">
-                <i class="fa-solid fa-circle-check"></i> Successful
-              </div>
-            </div>
-          </div>
+  runSelect.addEventListener('change', () => {
+    btnHeal.disabled = !runSelect.value;
+  });
 
-        </div>
-      </div>
+  btnHeal.addEventListener('click', async () => {
+    const runId = runSelect.value;
+    if (!runId) return;
 
-      <!-- Day Group: Yesterday -->
-      <div class="day-group">
-        <div class="day-marker">
-          <i class="fa-solid fa-calendar-days"></i>
-          <span>Yesterday</span>
-        </div>
-        
-        <div class="timeline-cards-row">
-          
-          <!-- Timeline Card 4 -->
-          <div class="timeline-event-card">
-            <div class="card-timeline-pin green-pin"></div>
-            <div class="card-timestamp">04:45 PM</div>
-            <div class="timeline-card-body">
-              <div class="event-card-header">
-                <div class="event-icon bg-green"><i class="fa-solid fa-arrows-rotate"></i></div>
-                <div class="event-title-block">
-                  <h4 class="event-action-title">Restart</h4>
-                  <p class="event-action-desc">Pod payment-service-6c7b9d was restarted automatically.</p>
-                </div>
-              </div>
-              <div class="event-card-status-badge green-badge">
-                <i class="fa-solid fa-circle-check"></i> Recovered
-              </div>
-            </div>
-          </div>
+    btnHeal.disabled = true;
+    btnHeal.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Healing…';
+    outcomeBadge.innerHTML = '';
+    clearConsole();
+    activateFlowStep(1);
 
-          <!-- Timeline Card 5 -->
-          <div class="timeline-event-card">
-            <div class="card-timeline-pin green-pin"></div>
-            <div class="card-timestamp">06:30 PM</div>
-            <div class="timeline-card-body">
-              <div class="event-card-header">
-                <div class="event-icon bg-green"><i class="fa-solid fa-arrows-rotate"></i></div>
-                <div class="event-title-block">
-                  <h4 class="event-action-title">Restart</h4>
-                  <p class="event-action-desc">Pod user-service-5f6a7b was restarted automatically.</p>
-                </div>
-              </div>
-              <div class="event-card-status-badge green-badge">
-                <i class="fa-solid fa-circle-check"></i> Recovered
-              </div>
-            </div>
-          </div>
+    const ctx = {};
+    const pod  = document.getElementById('heal-pod').value.trim();
+    const dep  = document.getElementById('heal-dep').value.trim();
+    const ft   = document.getElementById('heal-failure-type').value;
+    if (pod) ctx.pod_name = pod;
+    if (dep) ctx.deployment_name = dep;
+    if (ft)  ctx.failure_type = ft;
 
-        </div>
-      </div>
+    // Simulate step-by-step flow animation
+    await log('[Cortex] Starting healing cycle for ' + runId + '…', 'info');
+    await delay(400);
+    activateFlowStep(2);
+    await log('[AI] Analysing failure pattern…', 'info');
+    await delay(500);
+    activateFlowStep(3);
+    await log('[RCA] Identifying root cause…', 'info');
+    await delay(400);
+    activateFlowStep(4);
+    await log('[Engine] Selecting healing strategy…', 'info');
+    await delay(300);
+    activateFlowStep(5);
+    await log('[Engine] Executing strategy…', 'info');
 
-    </div>
-  </section>
+    try {
+      const resp = await fetch('/api/heal/' + runId, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(ctx),
+      });
+      const data = await resp.json();
+
+      await delay(300);
+      activateFlowStep(6);
+      await log('[Health] Verifying pod health…', 'info');
+      await delay(400);
+      activateFlowStep(7);
+
+      // Log actions taken
+      (data.actions_taken || []).forEach(a => log('[Action] ' + a, 'info'));
+
+      const success = data.success;
+      const outcome = data.outcome || (success ? 'Resolved' : 'Escalated');
+
+      await log('[Done] ' + (data.message || 'Healing complete.'), success ? 'success' : 'warn');
+
+      const cls = outcome === 'Resolved' ? 'outcome-resolved' :
+                  outcome === 'Escalated' ? 'outcome-escalated' : 'outcome-failed';
+      const ico = outcome === 'Resolved' ? 'fa-circle-check' :
+                  outcome === 'Escalated' ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
+      outcomeBadge.innerHTML = `<span class="outcome-badge ${cls}">
+        <i class="fa-solid ${ico}"></i> ${outcome}
+        ${data.mock ? ' <span style="opacity:.6;font-weight:400">(mock mode)</span>' : ''}
+      </span>`;
+
+      // Refresh history after a moment
+      setTimeout(refreshHistory, 1000);
+
+    } catch (err) {
+      await log('[Error] ' + err.message, 'error');
+      activateFlowStep(7);
+      outcomeBadge.innerHTML = `<span class="outcome-badge outcome-failed">
+        <i class="fa-solid fa-circle-xmark"></i> Error
+      </span>`;
+    } finally {
+      btnHeal.disabled = false;
+      btnHeal.innerHTML = '<i class="fa-solid fa-gears"></i> Execute Self-Healing';
+    }
+  });
+
+  // ── Helpers ─────────────────────────────────────────────────────
+
+  function activateFlowStep(n) {
+    flowSteps.forEach((s, i) => s.classList.toggle('active', i < n));
+  }
+
+  function clearConsole() {
+    consoleBody.innerHTML = '';
+    flowSteps.forEach(s => s.classList.remove('active'));
+  }
+
+  async function log(msg, type='') {
+    const ts = new Date().toLocaleTimeString();
+    const line = document.createElement('div');
+    line.className = `console-line ${type}`;
+    line.textContent = `[${ts}] ${msg}`;
+    consoleBody.appendChild(line);
+    consoleBody.scrollTop = consoleBody.scrollHeight;
+    await delay(50);
+  }
+
+  function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ── Filter history table ─────────────────────────────────────
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('#history-tbody tr[data-outcome]').forEach(row => {
+        const match = filter === 'all' || row.dataset.outcome === filter;
+        row.style.display = match ? '' : 'none';
+      });
+    });
+  });
+
+  // ── Refresh history via API ──────────────────────────────────
+  async function refreshHistory() {
+    try {
+      const resp = await fetch('/api/healing/status');
+      const data = await resp.json();
+      if (!data.events) return;
+      const tbody = document.getElementById('history-tbody');
+      // Prepend new events without full page reload
+      const newest = data.events[0];
+      if (!newest) return;
+      const existing = tbody.querySelector(`[data-run="${newest.run_id}"]`);
+      if (existing) return; // already there
+    } catch (e) { /* silent */ }
+  }
+
+  // ── Pre-fill from Re-Heal button ─────────────────────────────
+  window.prefillHeal = function(runId) {
+    runSelect.value = runId;
+    btnHeal.disabled = false;
+    document.getElementById('heal-pod').value = '';
+    document.getElementById('heal-dep').value = '';
+    document.getElementById('heal-failure-type').value = '';
+    document.getElementById('btn-do-heal').scrollIntoView({behavior: 'smooth', block: 'center'});
+  };
+
+  // ── Refresh button ──────────────────────────────────────────
+  document.getElementById('btn-refresh-history').addEventListener('click', () => location.reload());
+})();
+</script>
 {% endblock %}

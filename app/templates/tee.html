@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+{% set active_page = "tee" %}
+
+{% block title %}TEE Security | Cortex CI/CD{% endblock %}
+
+{% block extra_css %}
+<style>
+  .tee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .tee-full { grid-column: 1 / -1; }
+
+  /* Status bar */
+  .tee-status-bar { display: flex; align-items: center; gap: .75rem; padding: .85rem 1.25rem;
+    background: linear-gradient(135deg, rgba(124,58,237,.1), rgba(37,99,235,.08));
+    border-radius: 10px; border: 1px solid rgba(124,58,237,.25); margin-bottom: 1.5rem; }
+  .tee-status-icon { width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(124,58,237,.2); display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem; color: #a78bfa; flex-shrink: 0; }
+  .tee-status-info { flex: 1; }
+  .tee-status-info .tsi-title { font-weight: 600; font-size: .9rem; color: var(--text-primary); }
+  .tee-status-info .tsi-sub   { font-size: .75rem; color: var(--text-muted); margin-top: .1rem; }
+  .tee-status-chips { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .tee-chip { padding: .25rem .65rem; border-radius: 999px; font-size: .7rem; font-weight: 600; }
+  .tee-chip.verified  { background: rgba(34,197,94,.12); color: #4ade80; border: 1px solid rgba(34,197,94,.25); }
+  .tee-chip.simulated { background: rgba(168,85,247,.12); color: #c084fc; border: 1px solid rgba(168,85,247,.25); }
+  .tee-chip.secure    { background: rgba(59,130,246,.12); color: #60a5fa; border: 1px solid rgba(59,130,246,.25); }
+
+  /* Cards */
+  .tee-card { padding: 1.5rem; }
+  .tee-card-header { display: flex; align-items: center; gap: .6rem; margin-bottom: 1.25rem; }
+  .tee-card-header .tch-icon { width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+  .tch-purple { background: rgba(168,85,247,.15); color: #c084fc; }
+  .tch-green  { background: rgba(34,197,94,.15);  color: #4ade80; }
+  .tch-blue   { background: rgba(59,130,246,.15); color: #60a5fa; }
+  .tch-amber  { background: rgba(245,158,11,.15); color: #fbbf24; }
+  .tee-card-header h3 { font-size: .8rem; font-weight: 600; color: var(--text-primary); }
+
+  /* Key-value rows */
+  .kv-list { display: flex; flex-direction: column; gap: .5rem; }
+  .kv-row { display: flex; align-items: flex-start; gap: 1rem; padding: .5rem .75rem;
+    background: rgba(255,255,255,.03); border-radius: 7px; border: 1px solid rgba(255,255,255,.05); }
+  .kv-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--text-muted); min-width: 130px; flex-shrink: 0; padding-top: .1rem; }
+  .kv-value { font-size: .81rem; color: var(--text-primary); font-family: 'JetBrains Mono','Fira Code',monospace;
+    word-break: break-all; flex: 1; }
+  .kv-value.mono-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    max-width: 300px; display: inline-block; vertical-align: bottom; }
+
+  /* Security score gauge */
+  .score-wrap { display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1rem; }
+  .score-ring { position: relative; width: 80px; height: 80px; flex-shrink: 0; }
+  .score-svg  { width: 80px; height: 80px; transform: rotate(-90deg); }
+  .score-bg   { fill: none; stroke: rgba(255,255,255,.07); stroke-width: 8; }
+  .score-arc  { fill: none; stroke-width: 8; stroke-linecap: round; stroke: #a78bfa;
+    transition: stroke-dasharray .8s ease; }
+  .score-center { position: absolute; inset: 0; display: flex; align-items: center;
+    justify-content: center; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+  .score-info .si-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+    color: var(--text-muted); }
+  .score-info .si-val { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+  .score-info .si-sub { font-size: .75rem; color: var(--text-muted); margin-top: .1rem; }
+
+  /* Check list */
+  .check-list { display: flex; flex-direction: column; gap: .4rem; }
+  .check-item { display: flex; align-items: center; gap: .6rem; font-size: .8rem;
+    padding: .4rem .75rem; border-radius: 7px; background: rgba(255,255,255,.03); }
+  .ci-pass { color: #4ade80; }
+  .ci-fail { color: #f87171; }
+
+  /* Attestation actions */
+  .attest-action-row { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: 1rem; }
+  .btn-attest { padding: .6rem 1.1rem; border: none; border-radius: 8px;
+    font-size: .82rem; font-weight: 600; cursor: pointer; display: flex; align-items: center;
+    gap: .45rem; transition: opacity .2s; }
+  .btn-attest.primary   { background: linear-gradient(135deg,#7c3aed,#2563eb); color: #fff; }
+  .btn-attest.secondary { background: rgba(255,255,255,.07); color: var(--text-primary);
+    border: 1px solid rgba(255,255,255,.12); }
+  .btn-attest:hover { opacity: .83; }
+  .attest-result { margin-top: 1rem; padding: .85rem 1rem; border-radius: 8px;
+    font-size: .8rem; display: none; }
+  .ar-verified { background: rgba(34,197,94,.08); border: 1px solid rgba(34,197,94,.2); color: #4ade80; }
+  .ar-failed   { background: rgba(239,68,68,.08);  border: 1px solid rgba(239,68,68,.2);  color: #f87171; }
+  .ar-field { display: flex; gap: .75rem; padding: .25rem 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+  .ar-field:last-child { border-bottom: none; }
+  .ar-field .af-key { color: var(--text-muted); min-width: 140px; font-size: .75rem; }
+  .ar-field .af-val { font-family: monospace; font-size: .74rem; word-break: break-all; flex: 1; }
+
+  /* Seal form */
+  .seal-form { display: flex; flex-direction: column; gap: .75rem; }
+  .seal-form input { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    color: var(--text-primary); border-radius: 8px; padding: .55rem .8rem; font-size: .82rem;
+    transition: border-color .2s; }
+  .seal-form input:focus { outline: none; border-color: var(--accent-purple); }
+  .seal-form input::placeholder { color: rgba(255,255,255,.25); }
+  .btn-seal { padding: .65rem 1.1rem; border: none; border-radius: 8px;
+    background: linear-gradient(135deg,#065f46,#047857); color: #fff;
+    font-size: .82rem; font-weight: 600; cursor: pointer; display: flex;
+    align-items: center; gap: .4rem; transition: opacity .2s; }
+  .btn-seal:hover { opacity: .85; }
+  .seal-result { padding: .6rem .9rem; border-radius: 7px; font-size: .8rem; margin-top: .4rem; display: none; }
+  .sr-ok  { background: rgba(34,197,94,.1); color: #4ade80; border: 1px solid rgba(34,197,94,.2); }
+  .sr-err { background: rgba(239,68,68,.1);  color: #f87171; border: 1px solid rgba(239,68,68,.2); }
+
+  /* Secrets vault */
+  .vault-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .vault-stat { text-align: center; }
+  .vault-stat .vs-val   { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+  .vault-stat .vs-label { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Header -->
+<header class="page-header-row">
+  <div class="page-title-section">
+    <h1 class="page-title-serif">TEE Security</h1>
+    <p class="page-subtitle">Trusted Execution Environment — attestation, secrets, and secure operations.</p>
+  </div>
+  <div class="page-actions-section">
+    <button class="btn-refresh" id="btn-refresh-tee" title="Refresh TEE status"><i class="fa-solid fa-rotate"></i></button>
+  </div>
+</header>
+
+<!-- Status Banner -->
+<div class="tee-status-bar" id="tee-banner">
+  <div class="tee-status-icon"><i class="fa-solid fa-shield-halved"></i></div>
+  <div class="tee-status-info">
+    <div class="tsi-title" id="banner-title">TEE Enclave — Initialising…</div>
+    <div class="tsi-sub"  id="banner-sub">Loading attestation status…</div>
+  </div>
+  <div class="tee-status-chips" id="banner-chips"></div>
+</div>
+
+<!-- Main Grid -->
+<div class="tee-grid">
+
+  <!-- ── Enclave Measurements ─────────────────────────────── -->
+  <div class="dashboard-card tee-card">
+    <div class="tee-card-header">
+      <div class="tch-icon tch-purple"><i class="fa-solid fa-microchip"></i></div>
+      <h3>Enclave Measurements</h3>
+    </div>
+    <div class="kv-list" id="enclave-kvs">
+      <div class="kv-row"><span class="kv-label">Status</span>
+        <span class="kv-value" id="kv-platform">Loading…</span></div>
+      <div class="kv-row"><span class="kv-label">TCB Status</span>
+        <span class="kv-value" id="kv-tcb">—</span></div>
+      <div class="kv-row"><span class="kv-label">ISV SVN</span>
+        <span class="kv-value" id="kv-svn">—</span></div>
+      <div class="kv-row"><span class="kv-label">MRENCLAVE</span>
+        <span class="kv-value mono-truncate" id="kv-mrenclave">—</span></div>
+      <div class="kv-row"><span class="kv-label">MRSIGNER</span>
+        <span class="kv-value mono-truncate" id="kv-mrsigner">—</span></div>
+      <div class="kv-row"><span class="kv-label">IAS Report ID</span>
+        <span class="kv-value mono-truncate" id="kv-ias">—</span></div>
+    </div>
+  </div>
+
+  <!-- ── Security Score + Checks ─────────────────────────── -->
+  <div class="dashboard-card tee-card">
+    <div class="tee-card-header">
+      <div class="tch-icon tch-green"><i class="fa-solid fa-chart-simple"></i></div>
+      <h3>Security Score</h3>
+    </div>
+    <div class="score-wrap">
+      <div class="score-ring">
+        <svg class="score-svg" viewBox="0 0 80 80">
+          <circle class="score-bg"  cx="40" cy="40" r="32"/>
+          <circle class="score-arc" cx="40" cy="40" r="32" id="score-arc"
+            stroke-dasharray="0 201.06" stroke-dashoffset="0"/>
+        </svg>
+        <div class="score-center" id="score-val">—</div>
+      </div>
+      <div class="score-info">
+        <div class="si-label">Overall Score</div>
+        <div class="si-val" id="score-label">Calculating…</div>
+        <div class="si-sub" id="score-sub">Based on TEE measurements</div>
+      </div>
+    </div>
+    <div class="check-list" id="check-list">
+      <div class="check-item"><i class="fa-solid fa-spinner fa-spin" style="color:var(--text-muted)"></i> Loading checks…</div>
+    </div>
+  </div>
+
+  <!-- ── Remote Attestation ───────────────────────────────── -->
+  <div class="dashboard-card tee-card">
+    <div class="tee-card-header">
+      <div class="tch-icon tch-blue"><i class="fa-solid fa-certificate"></i></div>
+      <h3>Remote Attestation</h3>
+    </div>
+    <div class="kv-list">
+      <div class="kv-row"><span class="kv-label">Nonce</span>
+        <span class="kv-value mono-truncate" id="att-nonce">—</span></div>
+      <div class="kv-row"><span class="kv-label">Timestamp</span>
+        <span class="kv-value" id="att-ts">—</span></div>
+      <div class="kv-row"><span class="kv-label">Signature Algo</span>
+        <span class="kv-value" id="att-algo">—</span></div>
+      <div class="kv-row"><span class="kv-label">Verification</span>
+        <span class="kv-value" id="att-status">—</span></div>
+    </div>
+    <div class="attest-action-row">
+      <button class="btn-attest primary" id="btn-fresh-attest">
+        <i class="fa-solid fa-certificate"></i> Generate Fresh Attestation
+      </button>
+    </div>
+    <div class="attest-result" id="attest-result"></div>
+  </div>
+
+  <!-- ── Secrets Vault ────────────────────────────────────── -->
+  <div class="dashboard-card tee-card">
+    <div class="tee-card-header">
+      <div class="tch-icon tch-amber"><i class="fa-solid fa-vault"></i></div>
+      <h3>Secrets Vault</h3>
+    </div>
+    <div class="vault-stats" id="vault-stats">
+      <div class="vault-stat"><div class="vs-val" id="vs-count">—</div><div class="vs-label">Secrets Stored</div></div>
+      <div class="vault-stat"><div class="vs-val" id="vs-enc">AES-256</div><div class="vs-label">Encryption</div></div>
+      <div class="vault-stat"><div class="vs-val" id="vs-mode">Simulated</div><div class="vs-label">TEE Mode</div></div>
+    </div>
+    <hr style="border-color:rgba(255,255,255,.07);margin:.75rem 0">
+    <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:.6rem;">
+      Seal New Secret
+    </div>
+    <div class="seal-form">
+      <input type="text"     id="seal-key"   placeholder="Secret key (e.g. JENKINS_TOKEN)">
+      <input type="password" id="seal-value" placeholder="Secret value">
+      <button class="btn-seal" id="btn-seal">
+        <i class="fa-solid fa-lock"></i> Seal Secret
+      </button>
+    </div>
+    <div class="seal-result" id="seal-result"></div>
+  </div>
+
+</div><!-- /tee-grid -->
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const SCORE_CIRC = 2 * Math.PI * 32; // 201.06
+
+  // Load TEE status on page load
+  loadTEEStatus();
+  loadAttestation();
+  loadVault();
+
+  async function loadTEEStatus() {
+    try {
+      const resp = await fetch('/api/tee/status');
+      const data = await resp.json();
+
+      // Banner
+      const overall = data.overall_status || 'OK';
+      document.getElementById('banner-title').textContent =
+        `TEE Enclave — ${overall === 'OK' ? 'Fully Operational' : overall}`;
+      document.getElementById('banner-sub').textContent =
+        `Platform: ${data.platform || 'Intel SGX (Simulated)'} · Mode: ${data.mode || 'simulated'}`;
+      const chips = document.getElementById('banner-chips');
+      chips.innerHTML = `
+        <span class="tee-chip verified">✓ Verified</span>
+        <span class="tee-chip simulated">Simulated SGX</span>
+        <span class="tee-chip secure">AES-256 Encrypted</span>`;
+    } catch (e) {
+      document.getElementById('banner-title').textContent = 'TEE Status unavailable';
+    }
+  }
+
+  async function loadAttestation() {
+    try {
+      const resp = await fetch('/api/tee/attestation');
+      const data = await resp.json();
+      renderAttestation(data);
+    } catch (e) { /* silent */ }
+  }
+
+  function renderAttestation(data) {
+    document.getElementById('kv-platform').textContent  = data.platform || '—';
+    document.getElementById('kv-tcb').textContent       = data.tcb_status || '—';
+    document.getElementById('kv-svn').textContent       = data.isv_svn ?? '—';
+    document.getElementById('kv-mrenclave').textContent = data.mrenclave || '—';
+    document.getElementById('kv-mrsigner').textContent  = data.mrsigner  || '—';
+    document.getElementById('kv-ias').textContent       = data.ias_report_id || '—';
+
+    document.getElementById('att-nonce').textContent = data.nonce || '—';
+    document.getElementById('att-ts').textContent    = data.timestamp ? new Date(data.timestamp).toLocaleString() : '—';
+    document.getElementById('att-algo').textContent  = data.signature_algorithm || '—';
+    const vs = data.verification_status || '—';
+    document.getElementById('att-status').innerHTML  =
+      `<span style="color:${vs==='VERIFIED'?'#4ade80':'#f87171'}">${vs==='VERIFIED'?'✓ VERIFIED':'✗ FAILED'}</span>`;
+
+    // Security score
+    const score = data.security_score || 0;
+    const filled = (score / 100) * SCORE_CIRC;
+    document.getElementById('score-arc').style.strokeDasharray = `${filled} ${SCORE_CIRC}`;
+    document.getElementById('score-arc').style.stroke =
+      score >= 90 ? '#4ade80' : score >= 70 ? '#a78bfa' : '#fbbf24';
+    document.getElementById('score-val').textContent   = `${score}`;
+    document.getElementById('score-label').textContent =
+      score >= 90 ? 'Excellent' : score >= 70 ? 'Good' : 'Fair';
+    document.getElementById('score-sub').textContent   = 'Based on TEE measurements + TCB';
+
+    // Checks
+    const checks = [
+      ['TCB UpToDate',         data.tcb_status === 'UpToDate'],
+      ['Signature Verified',   data.verification_status === 'VERIFIED'],
+      ['No Advisory IDs',      !data.advisory_ids || data.advisory_ids.length === 0],
+      ['ISV SVN ≥ 1',          (data.isv_svn || 0) >= 1],
+      ['MRENCLAVE Present',    !!data.mrenclave],
+    ];
+    const cl = document.getElementById('check-list');
+    cl.innerHTML = checks.map(([label, pass]) =>
+      `<div class="check-item">
+        <i class="fa-solid ${pass ? 'fa-circle-check ci-pass' : 'fa-circle-xmark ci-fail'}"></i>
+        <span style="color:${pass?'var(--text-primary)':'var(--text-muted)'}">${label}</span>
+        <span style="margin-left:auto;font-size:.7rem;color:${pass?'#4ade80':'#f87171'}">${pass?'PASS':'FAIL'}</span>
+      </div>`).join('');
+  }
+
+  async function loadVault() {
+    try {
+      const resp = await fetch('/api/tee/secrets');
+      const data = await resp.json();
+      document.getElementById('vs-count').textContent = data.count ?? '—';
+      document.getElementById('vs-mode').textContent  = data.mode  || 'simulated';
+    } catch (e) { /* silent */ }
+  }
+
+  // Fresh attestation
+  document.getElementById('btn-fresh-attest').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-fresh-attest');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating…';
+    btn.disabled = true;
+    const res = document.getElementById('attest-result');
+    try {
+      const nonce = Math.random().toString(36).substring(2, 18);
+      const resp  = await fetch(`/api/tee/attestation?nonce=${nonce}`);
+      const data  = await resp.json();
+      renderAttestation(data);
+      res.className = 'attest-result ar-verified';
+      res.style.display = 'block';
+      res.innerHTML = `
+        <div class="ar-field"><span class="af-key">Verification</span><span class="af-val" style="color:#4ade80">✓ ${data.verification_status}</span></div>
+        <div class="ar-field"><span class="af-key">Nonce Used</span><span class="af-val">${nonce}</span></div>
+        <div class="ar-field"><span class="af-key">IAS Report ID</span><span class="af-val">${data.ias_report_id}</span></div>
+        <div class="ar-field"><span class="af-key">Security Score</span><span class="af-val">${data.security_score}/100</span></div>`;
+    } catch (e) {
+      res.className = 'attest-result ar-failed';
+      res.style.display = 'block';
+      res.textContent = 'Attestation failed: ' + e.message;
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-certificate"></i> Generate Fresh Attestation';
+      btn.disabled = false;
+    }
+  });
+
+  // Seal secret
+  document.getElementById('btn-seal').addEventListener('click', async () => {
+    const key   = document.getElementById('seal-key').value.trim();
+    const value = document.getElementById('seal-value').value.trim();
+    const res   = document.getElementById('seal-result');
+    if (!key || !value) {
+      res.className = 'seal-result sr-err';
+      res.style.display = 'block';
+      res.textContent = 'Both key and value are required.';
+      return;
+    }
+    const btn = document.getElementById('btn-seal');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sealing…';
+    try {
+      const resp = await fetch('/api/tee/seal', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({key, value}),
+      });
+      const data = await resp.json();
+      res.className = `seal-result ${data.success ? 'sr-ok' : 'sr-err'}`;
+      res.textContent = data.message || (data.success ? 'Secret sealed successfully.' : 'Failed to seal secret.');
+      res.style.display = 'block';
+      if (data.success) {
+        document.getElementById('seal-key').value   = '';
+        document.getElementById('seal-value').value = '';
+        loadVault();
+      }
+    } catch (e) {
+      res.className = 'seal-result sr-err';
+      res.textContent = e.message;
+      res.style.display = 'block';
+    } finally {
+      btn.innerHTML = '<i class="fa-solid fa-lock"></i> Seal Secret';
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('btn-refresh-tee').addEventListener('click', () => {
+    loadTEEStatus(); loadAttestation(); loadVault();
+  });
+})();
+</script>
+{% endblock %}

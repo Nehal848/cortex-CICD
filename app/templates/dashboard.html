@@ -119,15 +119,15 @@
       </div>
     </div>
 
-    <!-- 8. Cluster Security -->
+    <!-- 8. TEE Status -->
     <div class="dashboard-card">
-      <div>
-        <div class="card-label">Security Scan</div>
-        <div class="card-value green-text">Passed</div>
-        <div class="card-meta">Active CVEs: 0</div>
+      <div style="cursor: pointer;" onclick="window.location.href='/tee'">
+        <div class="card-label">TEE Status (Enclave)</div>
+        <div class="card-value green-text">Running</div>
+        <div class="card-meta">Score: 98/100 · Verified</div>
       </div>
       <div class="card-visual-container">
-        <div class="visual-icon-bg teal"><i class="fa-solid fa-shield-halved"></i></div>
+        <div class="visual-icon-bg teal"><i class="fa-solid fa-microchip"></i></div>
       </div>
     </div>
 
@@ -210,21 +210,18 @@
         </div>
       </div>
 
-      <!-- AI Self-Healing Agent Terminal -->
-      <div class="dashboard-card agent-terminal" style="display: block;">
-        <div class="terminal-header">
-          <div class="terminal-tabs">
-            <span class="terminal-tab active" id="tab-terminal"><i class="fa-solid fa-terminal"></i> cortex-healing-agent</span>
-            <span class="terminal-tab" id="tab-diff" style="display: none;"><i class="fa-solid fa-code-compare"></i> code-diff</span>
-          </div>
-          <div class="terminal-status">
-            <span class="status-pulse-dot idle" id="agent-pulse"></span>
-            <span id="agent-status-text">Agent Idle</span>
+      <!-- AI Incident Timeline -->
+      <div class="dashboard-card" style="display: block; padding: 1.5rem;">
+        <div class="panel-title-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-timeline" style="color: var(--accent-purple);"></i>
+            <span class="panel-title">AI Incident Timeline</span>
           </div>
         </div>
-        <div class="terminal-body" id="agent-terminal-body">
-          <div class="terminal-line system-line">[SYSTEM] Terminal initialized. Waiting for diagnostics trigger...</div>
-          <div class="terminal-line system-line">[SYSTEM] Click the "Simulate Failure & Heal" button in the top right to start.</div>
+        <div class="ai-timeline-container" id="ai-timeline-container">
+          <div style="color: var(--text-muted); font-size: 0.85rem; font-style: italic; text-align: center; padding: 2rem 0;">
+            Click "Simulate Failure & Heal" to trace an incident.
+          </div>
         </div>
       </div>
 
@@ -312,4 +309,73 @@
     </div>
 
   </section>
+
+  <style>
+    .ai-timeline { display: flex; flex-direction: column; gap: 0; position: relative; padding-left: 20px; margin-top: 10px; }
+    .ai-timeline::before { content: ''; position: absolute; left: 27px; top: 10px; bottom: 20px; width: 2px; background: rgba(255,255,255,.1); }
+    .timeline-item { position: relative; padding: 10px 0 10px 25px; opacity: 0; transform: translateY(10px); transition: all 0.4s ease; }
+    .timeline-item.show { opacity: 1; transform: translateY(0); }
+    .timeline-dot { position: absolute; left: -10px; top: 15px; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; z-index: 2; }
+    .td-red { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.5); }
+    .td-purple { background: rgba(168,85,247,.15); color: #c084fc; border: 1px solid rgba(168,85,247,.5); }
+    .td-blue { background: rgba(59,130,246,.15); color: #60a5fa; border: 1px solid rgba(59,130,246,.5); }
+    .td-amber { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.5); }
+    .td-green { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid rgba(34,197,94,.5); }
+    .tl-time { font-family: monospace; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+    .tl-title { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+    .tl-desc { font-size: 0.75rem; color: var(--text-secondary); }
+    .tl-cause-box { display: inline-block; padding: 3px 8px; background: rgba(255,255,255,0.05); border-left: 2px solid var(--accent-purple); border-radius: 4px; margin-top: 4px; }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnSimulate = document.getElementById('btn-simulate-heal');
+      const container = document.getElementById('ai-timeline-container');
+      
+      if(btnSimulate && container) {
+        btnSimulate.addEventListener('click', async () => {
+          btnSimulate.disabled = true;
+          btnSimulate.innerHTML = '<span class="btn-icon-highlight"><i class="fa-solid fa-spinner fa-spin"></i></span><span>Simulating...</span>';
+          
+          container.innerHTML = '<div class="ai-timeline" id="ai-timeline"></div>';
+          const tl = document.getElementById('ai-timeline');
+          
+          const steps = [
+            { class: 'td-red', icon: 'fa-triangle-exclamation', title: 'Deployment Failed', desc: 'Pod cortex-api crashed repeatedly.', delay: 500 },
+            { class: 'td-purple', icon: 'fa-brain', title: 'AI Detected CrashLoopBackOff', desc: 'Intercepted failure via Jenkins webhook.', delay: 1200 },
+            { class: 'td-blue', icon: 'fa-magnifying-glass', title: 'Root Cause Identified', desc: '<div class="tl-cause-box">OOMKilled: memory limit exceeded</div>', delay: 1200 },
+            { class: 'td-amber', icon: 'fa-gears', title: 'Execute Strategy (Scale/Restart)', desc: 'Increased memory limit from 256Mi to 512Mi and restarted pod.', delay: 1500 },
+            { class: 'td-green', icon: 'fa-shield-check', title: 'Health Check Passed', desc: 'Deployment is stable and receiving traffic.', delay: 1200 },
+            { class: 'td-green', icon: 'fa-check', title: 'Deployment Restored', desc: 'Incident fully resolved autonomously.', delay: 800 }
+          ];
+
+          let currentTime = new Date();
+          
+          for(let i=0; i<steps.length; i++) {
+            const step = steps[i];
+            await new Promise(r => setTimeout(r, step.delay));
+            
+            if(i > 0) currentTime = new Date(currentTime.getTime() + Math.random() * 2000 + 1000);
+            const timeStr = currentTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            
+            const div = document.createElement('div');
+            div.className = 'timeline-item';
+            div.innerHTML = `
+              <div class="timeline-dot ${step.class}"><i class="fa-solid ${step.icon}"></i></div>
+              <div class="tl-time">${timeStr}</div>
+              <div class="tl-title">${step.title}</div>
+              <div class="tl-desc">${step.desc}</div>
+            `;
+            tl.appendChild(div);
+            // trigger reflow for animation
+            void div.offsetWidth; 
+            div.classList.add('show');
+          }
+          
+          btnSimulate.disabled = false;
+          btnSimulate.innerHTML = '<span class="btn-icon-highlight"><i class="fa-solid fa-wand-magic-sparkles"></i></span><span>Simulate Failure & Heal</span>';
+        });
+      }
+    });
+  </script>
 {% endblock %}

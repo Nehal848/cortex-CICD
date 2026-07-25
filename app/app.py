@@ -1,14 +1,31 @@
 import os
+import sys
 from datetime import datetime, timedelta
 from flask import Flask
+
+# ── Add project root to path so tee/, ml/, security/, reports/ are importable
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
 from .db import db
 from .models import PipelineRun, Deployment, HealingEvent, Alert
 
-def create_app():
-    app = Flask(__name__)
-    app.secret_key = os.urandom(24)
 
-    # ── Database config ───────────────────────────────────────────
+def create_app():
+    # ── Load .env ─────────────────────────────────────────────────
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
+    except ImportError:
+        pass
+
+    app = Flask(__name__)
+
+    # Use SECRET_KEY from env, fall back to random
+    app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
+
+    # ── Database config ────────────────────────────────────────────
     basedir = os.path.abspath(os.path.dirname(__file__))
     app.config["SQLALCHEMY_DATABASE_URI"] = (
         "sqlite:///" + os.path.join(basedir, "cortex.db")
@@ -17,14 +34,41 @@ def create_app():
 
     db.init_app(app)
 
-    # ── Register blueprint ────────────────────────────────────────
+    # ── Register blueprint ─────────────────────────────────────────
     from .routes import main_bp
     app.register_blueprint(main_bp)
 
-    # ── Create tables & seed on first run ────────────────────────
+    # ── Create tables & seed on first run ─────────────────────────
     with app.app_context():
         db.create_all()
         _seed_if_empty()
+
+    # ── Boot TEE enclave & migrate secrets ────────────────────────
+    try:
+        from tee import secrets as tee_secrets
+        tee_secrets.bootstrap()
+    except Exception as exc:
+        app.logger.warning("[TEE] Could not initialise TEE: %s", exc)
+
+    # ── Start self-healing background scheduler ───────────────────
+    try:
+        from .healing import scheduler
+        scheduler.start(app, db, HealingEvent, PipelineRun)
+    except Exception as exc:
+        app.logger.warning("[Healing] Scheduler start failed: %s", exc)
+
+    # ── Train ML model in the background (non-blocking) ───────────
+    try:
+        import threading
+        def _train_ml():
+            try:
+                from ml.predict_failure import _load_or_train
+                _load_or_train()
+            except Exception as e:
+                pass
+        threading.Thread(target=_train_ml, daemon=True, name="MLTrainer").start()
+    except Exception:
+        pass
 
     return app
 
@@ -36,7 +80,7 @@ def _seed_if_empty():
 
     now = datetime.utcnow()
 
-    # ── Pipeline Runs ─────────────────────────────────────────────
+    # ── Pipeline Runs ──────────────────────────────────────────────
     runs = [
         PipelineRun(run_id="RUN-4819", repo="CortexCICD/Self-Healing-CI-CD", branch="main",
                     status="Success",     triggered_by="GitPush",   duration_secs=142, risk_score=12,
@@ -64,7 +108,7 @@ def _seed_if_empty():
                     created_at=now - timedelta(days=1, hours=4)),
     ]
 
-    # ── Deployments ───────────────────────────────────────────────
+    # ── Deployments ────────────────────────────────────────────────
     deployments = [
         Deployment(name="cortex-api",       environment="Production", version="v2.4.1",
                    status="Running",  deployed_by="CI/CD Auto",  created_at=now - timedelta(minutes=15)),
@@ -84,7 +128,7 @@ def _seed_if_empty():
                    status="Running",  deployed_by="CI/CD Auto",  created_at=now - timedelta(days=3)),
     ]
 
-    # ── Healing Events ────────────────────────────────────────────
+    # ── Healing Events ─────────────────────────────────────────────
     healing_events = [
         HealingEvent(run_id="RUN-4818", failure_type="Test Suite Timeout",
                      strategy="Auto Retry",   outcome="Resolved",  created_at=now - timedelta(hours=1, minutes=5)),
@@ -102,7 +146,7 @@ def _seed_if_empty():
                      strategy="Pod Restart",  outcome="Resolved",  created_at=now - timedelta(days=4)),
     ]
 
-    # ── Alerts ────────────────────────────────────────────────────
+    # ── Alerts ─────────────────────────────────────────────────────
     alerts = [
         Alert(title="High Memory Usage on cortex-api pod",
               severity="High",     source="Prometheus", status="Active",   created_at=now - timedelta(minutes=22)),
@@ -125,7 +169,7 @@ def _seed_if_empty():
     print("[Cortex] Database seeded with sample data.")
 
 
-# Entry point ─────────────────────────────────────────────────────
+# Entry point ──────────────────────────────────────────────────────
 if __name__ == "__main__":
     app = create_app()
     app.run(host="0.0.0.0", port=5000, debug=True)

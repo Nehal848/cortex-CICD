@@ -27,6 +27,24 @@ pipeline {
             }
         }
 
+        stage('Security Scan (Trivy)') {
+            steps {
+                sh 'trivy image --severity HIGH,CRITICAL my-app:latest'
+            }
+        }
+
+        stage('Generate SBOM (Syft)') {
+            steps {
+                sh 'syft my-app:latest -o json > sbom.json'
+            }
+        }
+
+        stage('Sign Image (Cosign)') {
+            steps {
+                sh 'cosign sign --key env://COSIGN_PRIVATE_KEY my-app:latest'
+            }
+        }
+
         stage('Deploy') {
             steps {
                 sh 'make deploy'

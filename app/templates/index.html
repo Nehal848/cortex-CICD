@@ -7,6 +7,43 @@
   <meta name="description" content="Next-generation CI/CD pipeline equipped with autonomous self-healing capabilities powered by agentic AI.">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.5') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* New Landing Page Sections Styles */
+    .section-padding { padding: 6rem 2rem; position: relative; z-index: 2; }
+    .section-title { text-align: center; font-size: 2.2rem; margin-bottom: 3rem; color: var(--text-primary); font-family: var(--font-serif); }
+    
+    /* How it works */
+    .hiw-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto; }
+    .hiw-step { text-align: center; padding: 2rem; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
+    .hiw-step::after { content: '\f061'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: -1.5rem; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.2); font-size: 1.5rem; }
+    .hiw-step:last-child::after { display: none; }
+    @media (max-width: 800px) { .hiw-step::after { display: none; } }
+    .hiw-icon { font-size: 2.5rem; color: var(--accent-purple); margin-bottom: 1.5rem; }
+    .hiw-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-primary); }
+    .hiw-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+
+    /* Stats */
+    .stats-section { background: linear-gradient(90deg, rgba(124,58,237,0.1), rgba(37,99,235,0.1)); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; max-width: 1000px; margin: 0 auto; text-align: center; }
+    .stat-val { font-size: 3.5rem; font-weight: 700; background: linear-gradient(135deg, #a78bfa, #60a5fa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2; }
+    .stat-label { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.5rem; }
+
+    /* Testimonials */
+    .testimonial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1100px; margin: 0 auto; }
+    .t-card { background: rgba(0,0,0,0.3); padding: 2.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); position: relative; }
+    .t-quote { font-size: 1.05rem; color: var(--text-primary); font-style: italic; line-height: 1.7; margin-bottom: 1.5rem; }
+    .t-author { display: flex; align-items: center; gap: 1rem; }
+    .t-avatar { width: 48px; height: 48px; border-radius: 50%; background: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; }
+    .t-info h4 { margin: 0; font-size: 0.95rem; color: var(--text-primary); }
+    .t-info p { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+    .t-icon { position: absolute; top: 1.5rem; right: 2rem; font-size: 3rem; color: rgba(255,255,255,0.03); }
+
+    /* CTA Section */
+    .cta-section { text-align: center; max-width: 700px; margin: 0 auto; padding: 6rem 2rem; }
+    .cta-title { font-size: 2.5rem; font-family: var(--font-serif); margin-bottom: 1.5rem; }
+    .cta-desc { font-size: 1.1rem; color: var(--text-secondary); margin-bottom: 2.5rem; }
+    .cta-btn-group { display: flex; gap: 1rem; justify-content: center; }
+  </style>
 </head>
 <body class="elegant-body">
   
@@ -133,6 +170,90 @@
       <h3>Real-time Agent Console</h3>
       <p>Track the step-by-step reasoning and code diff applications of our AI agents live.</p>
     </a>
+  </section>
+
+  <!-- How it Works -->
+  <section class="section-padding" id="how-it-works">
+    <h2 class="section-title">How Cortex Heals Your Pipelines</h2>
+    <div class="hiw-grid">
+      <div class="hiw-step">
+        <div class="hiw-icon"><i class="fa-solid fa-radar"></i></div>
+        <div class="hiw-title">1. Detect</div>
+        <div class="hiw-desc">Cortex hooks into Jenkins, GitHub Actions, and Kubernetes to instantly detect pipeline failures or pod crashes.</div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-icon"><i class="fa-solid fa-brain"></i></div>
+        <div class="hiw-title">2. Diagnose</div>
+        <div class="hiw-desc">Our AI engine pulls the logs, parses stack traces, and predicts the exact root cause with high confidence.</div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-icon"><i class="fa-solid fa-bolt"></i></div>
+        <div class="hiw-title">3. Heal</div>
+        <div class="hiw-desc">The Autonomous Engine applies a healing strategy—restarting pods, rolling back deployments, or generating patch PRs.</div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-icon"><i class="fa-solid fa-check-double"></i></div>
+        <div class="hiw-title">4. Verify</div>
+        <div class="hiw-desc">Cortex monitors the health checks to ensure the fix was successful before resolving the incident silently.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="section-padding stats-section">
+    <div class="stats-grid">
+      <div>
+        <div class="stat-val">400x</div>
+        <div class="stat-label">Faster Resolution</div>
+      </div>
+      <div>
+        <div class="stat-val">99.9%</div>
+        <div class="stat-label">Uptime Maintained</div>
+      </div>
+      <div>
+        <div class="stat-val">0</div>
+        <div class="stat-label">Manual Interventions</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="section-padding">
+    <h2 class="section-title">Loved by Platform Engineering Teams</h2>
+    <div class="testimonial-grid">
+      <div class="t-card">
+        <i class="fa-solid fa-quote-right t-icon"></i>
+        <div class="t-quote">"Cortex caught an OOM kill loop on a Friday night, scaled the replica sets, and resolved the alert. We didn't even know it happened until Monday morning."</div>
+        <div class="t-author">
+          <div class="t-avatar">S</div>
+          <div class="t-info">
+            <h4>Sarah Jenkins</h4>
+            <p>Lead DevOps, FinTech Inc.</p>
+          </div>
+        </div>
+      </div>
+      <div class="t-card">
+        <i class="fa-solid fa-quote-right t-icon"></i>
+        <div class="t-quote">"The ML Prediction Engine correctly identified a dependency drift issue in our Jenkins pipeline and auto-generated a PR to fix it within seconds."</div>
+        <div class="t-author">
+          <div class="t-avatar" style="background:#3b82f6;">M</div>
+          <div class="t-info">
+            <h4>Michael Chen</h4>
+            <p>Platform Architect, CloudScale</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <h2 class="cta-title">Ready to automate your incident response?</h2>
+    <p class="cta-desc">Stop waking up for 3 AM pages. Let Cortex's AI engine handle your pipeline failures automatically.</p>
+    <div class="cta-btn-group">
+      <a href="{{ url_for('auth.login') }}" class="btn elegant-btn-primary">Get Started Now</a>
+      <a href="{{ url_for('dashboard.docs') }}" class="btn elegant-btn-outline">View Documentation</a>
+    </div>
   </section>
 
   <!-- Footer -->

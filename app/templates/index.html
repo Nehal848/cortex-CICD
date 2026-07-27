@@ -27,15 +27,15 @@
   <!-- Navigation -->
   <nav class="navbar elegant-nav">
     <div class="logo">
-      <i class="fa-solid fa-microchip"></i>
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="height: 1.5em; width: auto; vertical-align: middle;">
       Cortex
     </div>
     <ul class="nav-links">
       <li><a href="#" class="nav-item active">Overview</a></li>
       <li><a href="#features" class="nav-item">Features</a></li>
-      <li><a href="{{ url_for('main.dashboard') }}" class="nav-item">Dashboard</a></li>
-      <li><a href="{{ url_for('main.docs') }}" class="nav-item">Docs</a></li>
-      <li><a href="{{ url_for('main.login') }}" class="nav-item btn elegant-btn-secondary">Sign In</a></li>
+      <li><a href="{{ url_for('dashboard.dashboard') }}" class="nav-item">Dashboard</a></li>
+      <li><a href="{{ url_for('dashboard.docs') }}" class="nav-item">Docs</a></li>
+      <li><a href="{{ url_for('auth.login') }}" class="nav-item btn elegant-btn-secondary">Sign In</a></li>
     </ul>
   </nav>
 
@@ -55,10 +55,10 @@
         Cortex intercepts CI/CD failures in real-time, diagnoses the root cause, and autonomously writes the patch before you even notice.
       </p>
       <div class="hero-actions">
-        <a href="{{ url_for('main.login') }}" class="btn elegant-btn-primary">
+        <a href="{{ url_for('auth.login') }}" class="btn elegant-btn-primary">
           Start Deploying <i class="fa-solid fa-arrow-right"></i>
         </a>
-        <a href="{{ url_for('main.docs') }}" class="btn elegant-btn-outline">
+        <a href="{{ url_for('dashboard.docs') }}" class="btn elegant-btn-outline">
           Read Documentation
         </a>
       </div>
@@ -118,17 +118,17 @@
 
   <!-- Elegant Features -->
   <section class="elegant-features" id="features">
-    <a href="{{ url_for('main.self_healing') }}" class="e-feature-card">
+    <a href="{{ url_for('dashboard.self_healing') }}" class="e-feature-card">
       <div class="e-icon"><i class="fa-solid fa-bug-slash"></i></div>
       <h3>Autonomous Diagnostics</h3>
       <p>Cortex instantly extracts stack traces and build logs to pinpoint exactly why your pipeline broke.</p>
     </a>
-    <a href="{{ url_for('main.prediction') }}" class="e-feature-card">
+    <a href="{{ url_for('dashboard.prediction') }}" class="e-feature-card">
       <div class="e-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
       <h3>AI-Powered Patches</h3>
       <p>Agents generate target code patches and test them in isolated sandbox branches automatically.</p>
     </a>
-    <a href="{{ url_for('main.pipeline') }}" class="e-feature-card">
+    <a href="{{ url_for('dashboard.pipeline') }}" class="e-feature-card">
       <div class="e-icon"><i class="fa-solid fa-terminal"></i></div>
       <h3>Real-time Agent Console</h3>
       <p>Track the step-by-step reasoning and code diff applications of our AI agents live.</p>
@@ -139,7 +139,7 @@
   <footer class="elegant-footer">
     <div class="footer-content">
       <div class="footer-logo">
-        <i class="fa-solid fa-microchip"></i> Cortex CI/CD
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="height: 1.5em; width: auto; vertical-align: middle;"> Cortex CI/CD
       </div>
       <div class="footer-links">
         <a href="#">Privacy</a>

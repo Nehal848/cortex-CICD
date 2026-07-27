@@ -32,51 +32,75 @@
     <!-- Alert Items List -->
     <div class="alerts-list-feed">
       
-      <!-- Alert 1: Deployment Failed -->
-      <div class="alert-feed-item critical">
-        <div class="alert-icon-wrapper bg-red">
-          <i class="fa-solid fa-circle-xmark"></i>
+      {% if alerts %}
+        {% for alert in alerts %}
+        {% set status_class = 'critical' if alert.severity == 'Critical' else ('warning-alert' if alert.severity == 'High' else ('success' if alert.severity == 'Medium' else 'info')) %}
+        {% set icon_color = 'bg-red' if alert.severity == 'Critical' else ('bg-gold' if alert.severity == 'High' else ('bg-teal' if alert.severity == 'Medium' else 'bg-blue')) %}
+        {% set text_color = 'critical-color' if alert.severity == 'Critical' else ('gold-color' if alert.severity == 'High' else ('teal-color' if alert.severity == 'Medium' else 'blue-color')) %}
+        {% set icon_class = 'fa-triangle-exclamation' %}
+        
+        <div class="alert-feed-item {{ status_class }}" id="alert-item-{{ alert.id }}">
+          <div class="alert-icon-wrapper {{ icon_color }}">
+            <i class="fa-solid {{ icon_class }}"></i>
+          </div>
+          <div class="alert-text-content" style="flex-grow: 1;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <h4 class="alert-title-text {{ text_color }}">{{ alert.title }}</h4>
+              <span class="badge" style="font-size: 0.7rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);" id="badge-{{ alert.id }}">{{ alert.status }}</span>
+            </div>
+            <p class="alert-desc-text">{{ alert.description }} | Source: {{ alert.source }} | {{ alert.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            
+            <div style="margin-top: 10px; display: flex; gap: 8px;">
+              {% if alert.status == 'Active' %}
+              <button class="btn btn-outline-purple btn-sm" onclick="handleAlertAction('{{ alert.id }}', 'acknowledge')"><i class="fa-solid fa-eye"></i> Acknowledge</button>
+              {% endif %}
+              
+              {% if alert.status in ['Active', 'Acknowledged'] %}
+              <button class="btn btn-outline-gold btn-sm" onclick="handleAlertAction('{{ alert.id }}', 'resolve')"><i class="fa-solid fa-check"></i> Resolve</button>
+              <button class="btn btn-outline-bluegray btn-sm" onclick="handleAlertAction('{{ alert.id }}', 'silence')"><i class="fa-solid fa-bell-slash"></i> Silence</button>
+              {% endif %}
+              
+              {% if alert.status in ['Resolved', 'Silenced'] %}
+              <button class="btn btn-outline-bluegray btn-sm" onclick="handleAlertAction('{{ alert.id }}', 'archive')"><i class="fa-solid fa-box-archive"></i> Archive</button>
+              {% endif %}
+            </div>
+          </div>
         </div>
-        <div class="alert-text-content">
-          <h4 class="alert-title-text critical-color">Deployment Failed</h4>
-          <p class="alert-desc-text">Deployment v1.2.5 - reason: timeout, frontend-service pod, US-East cluster | 5 min ago</p>
+        {% endfor %}
+      {% else %}
+        <div style="text-align: center; color: var(--text-muted); padding: 30px;">
+          <i class="fa-solid fa-check-circle" style="font-size: 2rem; color: var(--teal-graph); margin-bottom: 10px;"></i>
+          <p>No alerts found. System is healthy!</p>
         </div>
-      </div>
-
-      <!-- Alert 2: Auto Rollback Successful -->
-      <div class="alert-feed-item success">
-        <div class="alert-icon-wrapper bg-green">
-          <i class="fa-solid fa-circle-check"></i>
-        </div>
-        <div class="alert-text-content">
-          <h4 class="alert-title-text success-color">Auto Rollback Successful</h4>
-          <p class="alert-desc-text">Rolled back to v1.2.4 (commit e163o0e) - triggered by deployment failure | 10 min ago</p>
-        </div>
-      </div>
-
-      <!-- Alert 3: CPU Usage Above 80% -->
-      <div class="alert-feed-item warning-alert">
-        <div class="alert-icon-wrapper bg-gold">
-          <i class="fa-solid fa-circle-exclamation"></i>
-        </div>
-        <div class="alert-text-content">
-          <h4 class="alert-title-text gold-color">CPU Usage Above 80%</h4>
-          <p class="alert-desc-text">Cluster node-2: current 85% | 15 min ago</p>
-        </div>
-      </div>
-
-      <!-- Alert 4: Pod Restarted -->
-      <div class="alert-feed-item info">
-        <div class="alert-icon-wrapper bg-teal">
-          <i class="fa-solid fa-circle-info"></i>
-        </div>
-        <div class="alert-text-content">
-          <h4 class="alert-title-text teal-color">Pod Restarted</h4>
-          <p class="alert-desc-text">pod: frontend-service-70BIBs, transient error detected | 20 min ago</p>
-        </div>
-      </div>
+      {% endif %}
 
     </div>
+
+  </div>
+
+  <script>
+    async function handleAlertAction(alertId, action) {
+      const payload = action === 'silence' ? { duration_minutes: 60 } : {};
+      
+      try {
+        const response = await fetch(`/api/alerts/${alertId}/${action}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+          showFlashNotification(`Alert successfully marked as ${action}d.`, 'var(--teal-graph)');
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          const err = await response.json();
+          showFlashNotification(`Failed to ${action} alert: ${err.message}`, 'var(--red-gauge)');
+        }
+      } catch (err) {
+        showFlashNotification(`Error executing action: ${err}`, 'var(--red-gauge)');
+      }
+    }
+  </script>
 
   </div>
 {% endblock %}

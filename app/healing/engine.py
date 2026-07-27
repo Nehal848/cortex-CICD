@@ -44,16 +44,34 @@ class HealingEngine:
 
         logger.info("[HealingEngine] Starting healing cycle for %s", run_id)
 
+        # Emit SSE event: healing started
+        try:
+            from app.events import publish
+            publish("healing.started", {"run_id": run_id, "failure_type": context.get("failure_type", "")})
+        except Exception:
+            pass
+
         # ── Step 1: Get failure type from DB or ML ────────────────
         run = self.PipelineRun.query.filter_by(run_id=run_id).first()
         failure_type = context.get("failure_type", "")
         if not failure_type and run:
+            # Calculate real consecutive failures for better ML accuracy
+            try:
+                from app.services.pipeline_service import get_consecutive_failures
+                consec = get_consecutive_failures(run.repo, run.branch)
+            except Exception:
+                consec = 0
+
             from ml.predict_failure import predict_failure_risk
             prediction = predict_failure_risk(
-                repo=run.repo, branch=run.branch,
-                files_changed=10, duration_secs=run.duration_secs,
+                repo=run.repo,
+                branch=run.branch,
+                files_changed=context.get("files_changed", 10),
+                duration_secs=run.duration_secs,
+                consecutive_failures=consec,
             )
             failure_type = prediction.get("failure_type", "Unknown")
+            context["consecutive_failures"] = consec
         context["failure_type"] = failure_type
 
         # ── Step 2: Choose strategy ───────────────────────────────
@@ -97,6 +115,19 @@ class HealingEngine:
 
         result["run_id"]       = run_id
         result["failure_type"] = failure_type
+
+        # Emit SSE event: healing completed
+        try:
+            from app.events import publish
+            publish("healing.completed", {
+                "run_id":       run_id,
+                "failure_type": failure_type,
+                "strategy":     strategy.name,
+                "outcome":      outcome,
+            })
+        except Exception:
+            pass
+
         return result
 
     def get_pending_failures(self) -> list:

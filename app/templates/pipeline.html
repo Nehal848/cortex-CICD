@@ -91,85 +91,45 @@
         <h3 class="panel-subtitle">Current Pipeline: Build #256 <span class="badge badge-failed" id="pipeline-status-badge">Failed</span></h3>
       </div>
       
-      <!-- 10 Nodes Progress Schematic -->
-      <div class="pipeline-schematic-flow">
+      <!-- 5 Nodes Progress Schematic -->
+      <div class="pipeline-schematic-flow" id="pipeline-anim-flow">
         
-        <!-- Node 1: Code Commit -->
-        <div class="flow-node success" id="node-code-commit">
-          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
-          <span class="flow-node-label">Code Commit</span>
-          <span class="flow-node-status">Complete</span>
-        </div>
-        <div class="flow-connector success" id="conn-code-commit"></div>
-
-        <!-- Node 2: Checkout -->
-        <div class="flow-node success" id="node-checkout">
-          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
-          <span class="flow-node-label">Checkout</span>
-          <span class="flow-node-status">Complete</span>
-        </div>
-        <div class="flow-connector success" id="conn-checkout"></div>
-
-        <!-- Node 3: Build -->
-        <div class="flow-node success" id="node-build">
-          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
-          <span class="flow-node-label">Build</span>
-          <span class="flow-node-status">Complete</span>
-        </div>
-        <div class="flow-connector success" id="conn-build"></div>
-
-        <!-- Node 4: Unit Tests -->
-        <div class="flow-node success" id="node-unit-tests">
-          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
-          <span class="flow-node-label">Unit Tests</span>
-          <span class="flow-node-status">Complete</span>
-        </div>
-        <div class="flow-connector success" id="conn-unit-tests"></div>
-
-        <!-- Node 5: Docker Build -->
-        <div class="flow-node success" id="node-docker-build">
-          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
-          <span class="flow-node-label">Docker Build</span>
-          <span class="flow-node-status">Complete</span>
-        </div>
-        <div class="flow-connector success" id="conn-docker-build"></div>
-
-        <!-- Node 6: Image Scan -->
-        <div class="flow-node success" id="node-image-scan">
-          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
-          <span class="flow-node-label">Image Scan</span>
-          <span class="flow-node-status">Complete</span>
-        </div>
-        <div class="flow-connector success" id="conn-image-scan"></div>
-
-        <!-- Node 7: Push Registry -->
-        <div class="flow-node success" id="node-push-registry">
-          <div class="flow-node-dot"><i class="fa-solid fa-check"></i></div>
-          <span class="flow-node-label">Push Registry</span>
-          <span class="flow-node-status">Complete</span>
-        </div>
-        <div class="flow-connector success" id="conn-push-registry"></div>
-
-        <!-- Node 8: Deploy to K8s -->
-        <div class="flow-node failed" id="node-deploy-k8s">
-          <div class="flow-node-dot"><i class="fa-solid fa-xmark"></i></div>
-          <span class="flow-node-label">Deploy to K8s</span>
-          <span class="flow-node-status">Failed</span>
-        </div>
-        <div class="flow-connector" id="conn-deploy-k8s"></div>
-
-        <!-- Node 9: Health Check -->
-        <div class="flow-node waiting" id="node-health-check">
-          <div class="flow-node-dot"><i class="fa-solid fa-ellipsis"></i></div>
-          <span class="flow-node-label">Health Check</span>
+        <!-- Node 1: Queued -->
+        <div class="flow-node waiting" id="node-queued">
+          <div class="flow-node-dot"><i class="fa-solid fa-clock"></i></div>
+          <span class="flow-node-label">Queued</span>
           <span class="flow-node-status">Waiting</span>
         </div>
-        <div class="flow-connector" id="conn-health-check"></div>
+        <div class="flow-connector" id="conn-queued"></div>
 
-        <!-- Node 10: Production -->
-        <div class="flow-node waiting" id="node-production">
-          <div class="flow-node-dot"><i class="fa-solid fa-ellipsis"></i></div>
-          <span class="flow-node-label">Production</span>
+        <!-- Node 2: Running -->
+        <div class="flow-node waiting" id="node-running">
+          <div class="flow-node-dot"><i class="fa-solid fa-spinner"></i></div>
+          <span class="flow-node-label">Running</span>
+          <span class="flow-node-status">Waiting</span>
+        </div>
+        <div class="flow-connector" id="conn-running"></div>
+
+        <!-- Node 3: Testing -->
+        <div class="flow-node waiting" id="node-testing">
+          <div class="flow-node-dot"><i class="fa-solid fa-flask"></i></div>
+          <span class="flow-node-label">Testing</span>
+          <span class="flow-node-status">Waiting</span>
+        </div>
+        <div class="flow-connector" id="conn-testing"></div>
+
+        <!-- Node 4: Deploying -->
+        <div class="flow-node waiting" id="node-deploying">
+          <div class="flow-node-dot"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+          <span class="flow-node-label">Deploying</span>
+          <span class="flow-node-status">Waiting</span>
+        </div>
+        <div class="flow-connector" id="conn-deploying"></div>
+
+        <!-- Node 5: Completed -->
+        <div class="flow-node waiting" id="node-completed">
+          <div class="flow-node-dot"><i class="fa-solid fa-flag-checkered"></i></div>
+          <span class="flow-node-label">Completed</span>
           <span class="flow-node-status">Waiting</span>
         </div>
 
@@ -179,13 +139,13 @@
       <div class="pipeline-progress-section">
         <div class="progress-bar-container">
           <div class="progress-bar-track">
-            <div class="progress-bar-fill-purple" id="pipeline-progress-fill" style="width: 72%;"></div>
+            <div class="progress-bar-fill-purple" id="pipeline-progress-fill" style="width: 0%;"></div>
           </div>
-          <span class="progress-percent-label" id="pipeline-progress-val">72%</span>
+          <span class="progress-percent-label" id="pipeline-progress-val">0%</span>
         </div>
         <div class="current-stage-indicator">
           <span>Current Stage:</span>
-          <span class="stage-highlight red-text" id="pipeline-current-stage-text">Deploy to Kubernetes</span>
+          <span class="stage-highlight purple-text" id="pipeline-current-stage-text">Waiting to Start</span>
         </div>
       </div>
     </div>

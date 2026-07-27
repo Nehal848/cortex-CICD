@@ -82,8 +82,19 @@ def _train() -> bool:
         import numpy as np
         from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
         from sklearn.model_selection import train_test_split
+        import requests
 
         logger.info("[ML] Training failure prediction model…")
+
+        # Try to fetch real Jenkins data first
+        jenkins_url = os.getenv("JENKINS_URL", "")
+        jenkins_user = os.getenv("JENKINS_USER", "")
+        jenkins_token = os.getenv("JENKINS_TOKEN", "")
+        real_data_used = False
+        
+        # We will keep the synthetic generation as a fallback if Jenkins has no data
+        np.random.seed(42)
+        n = 2000
 
         # Generate synthetic training data from domain knowledge
         np.random.seed(42)

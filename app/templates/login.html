@@ -12,13 +12,13 @@
   <!-- Navigation -->
   <nav class="navbar">
     <div class="logo">
-      <a href="{{ url_for('main.index') }}" style="display: flex; align-items: center; gap: 0.6rem;">
-        <i class="fa-solid fa-microchip"></i>
+      <a href="{{ url_for('dashboard.index') }}" style="display: flex; align-items: center; gap: 0.6rem;">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="height: 1.5em; width: auto; vertical-align: middle;">
         Cortex CI/CD
       </a>
     </div>
     <ul class="nav-links">
-      <li><a href="{{ url_for('main.index') }}" class="nav-item">Back to Home</a></li>
+      <li><a href="{{ url_for('dashboard.index') }}" class="nav-item">Back to Home</a></li>
     </ul>
   </nav>
 
@@ -37,7 +37,7 @@
       </div>
       {% endif %}
 
-      <form action="{{ url_for('main.login') }}" method="POST">
+      <form action="{{ url_for('auth.login') }}" method="POST">
         <div class="form-group">
           <label for="username" class="form-label">Username</label>
           <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required autocomplete="username">

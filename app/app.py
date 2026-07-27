@@ -12,7 +12,7 @@ from .db import db
 from .models import PipelineRun, Deployment, HealingEvent, Alert
 
 
-def create_app():
+def create_app(test_config: dict | None = None):
     # ── Load .env ─────────────────────────────────────────────────
     try:
         from dotenv import load_dotenv
@@ -21,9 +21,11 @@ def create_app():
         pass
 
     app = Flask(__name__)
+    from .config import Config
+    app.config.from_object(Config)
 
     # Use SECRET_KEY from env, fall back to random
-    app.secret_key = os.getenv("SECRET_KEY", os.urandom(24).hex())
+    app.secret_key = app.config.get("SECRET_KEY", os.urandom(24).hex())
 
     # ── Database config ────────────────────────────────────────────
     basedir = os.path.abspath(os.path.dirname(__file__))
@@ -32,20 +34,35 @@ def create_app():
     )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+    # Allow test_config to override (e.g., in-memory SQLite for tests)
+    if test_config:
+        app.config.update(test_config)
+
     db.init_app(app)
 
-    # ── Register blueprint ─────────────────────────────────────────
-    from .routes import main_bp
-    app.register_blueprint(main_bp)
+    # ── Register blueprints ─────────────────────────────────────────
+    from .routes.auth import auth_bp
+    from .routes.dashboard import dashboard_bp
+    from .routes.api import api_bp
+    from .routes.webhooks import webhooks_bp
+    from .routes.health import health_bp
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(api_bp)
+    app.register_blueprint(webhooks_bp)
+    app.register_blueprint(health_bp)
 
     # ── Create tables & seed on first run ─────────────────────────
     with app.app_context():
         db.create_all()
-        _seed_if_empty()
+        _migrate_schema()   # Option B: safe ALTER TABLE for new columns
+        if not test_config:
+            _seed_if_empty()
 
     # ── Boot TEE enclave & migrate secrets ────────────────────────
     try:
-        from tee import secrets as tee_secrets
+        from app.tee import secrets as tee_secrets
         tee_secrets.bootstrap()
     except Exception as exc:
         app.logger.warning("[TEE] Could not initialise TEE: %s", exc)
@@ -57,6 +74,14 @@ def create_app():
     except Exception as exc:
         app.logger.warning("[Healing] Scheduler start failed: %s", exc)
 
+    # ── Start pipeline status poller ──────────────────────────────
+    try:
+        from .services import status_poller
+        status_poller.start(app, db)
+    except Exception as exc:
+        app.logger.warning("[StatusPoller] Start failed: %s", exc)
+
+    # ── Train ML model in the background (non-blocking) ───────────
     # ── Train ML model in the background (non-blocking) ───────────
     try:
         import threading
@@ -64,14 +89,83 @@ def create_app():
             try:
                 from ml.predict_failure import _load_or_train
                 _load_or_train()
-            except Exception as e:
+            except Exception:
                 pass
         threading.Thread(target=_train_ml, daemon=True, name="MLTrainer").start()
     except Exception:
         pass
 
+    # ── Start SSE metrics ticker (metrics.tick every 30s, heartbeat every 60s) ─
+    if not test_config:  # skip background threads during tests
+        try:
+            import threading as _t
+            def _sse_ticker():
+                import time
+                from app.events import publish
+                from app.integrations import prometheus_client as pc
+                tick = 0
+                while True:
+                    time.sleep(30)
+                    tick += 1
+                    try:
+                        publish("metrics.tick", {
+                            "cpu_percent":    pc.get_cpu_usage(),
+                            "memory_percent": pc.get_memory_usage(),
+                            "disk_percent":   pc.get_disk_usage(),
+                            "source":         "prometheus" if pc._is_available() else "simulated",
+                        })
+                    except Exception:
+                        pass
+                    if tick % 2 == 0:  # every 60s
+                        try:
+                            from app.events import subscriber_count
+                            from app.services.status_poller import is_running
+                            publish("system.status", {
+                                "sse_clients":     subscriber_count(),
+                                "poller_running":  is_running(),
+                            })
+                        except Exception:
+                            pass
+            _t.Thread(target=_sse_ticker, daemon=True, name="SSETicker").start()
+        except Exception as exc:
+            app.logger.warning("[SSE] Ticker start failed: %s", exc)
+
     return app
 
+
+# ── Schema Migration Helper (Option B) ────────────────────────────
+
+def _migrate_schema():
+    """
+    Safely add new columns to existing tables using raw SQLite ALTER TABLE.
+    SQLAlchemy's db.create_all() does not add columns to existing tables,
+    so we handle it manually here.  Each ALTER is wrapped in its own
+    try/except so a second startup is a no-op.
+    """
+    engine = db.engine
+    with engine.connect() as conn:
+        migrations = [
+            # PipelineRun — Jenkins tracking columns (v1.1)
+            "ALTER TABLE pipeline_runs ADD COLUMN jenkins_build_number INTEGER",
+            "ALTER TABLE pipeline_runs ADD COLUMN jenkins_job_name VARCHAR(120)",
+            # Alert — lifecycle tracking columns (v1.2)
+            "ALTER TABLE alerts ADD COLUMN acknowledged_by VARCHAR(60)",
+            "ALTER TABLE alerts ADD COLUMN acknowledged_at DATETIME",
+            "ALTER TABLE alerts ADD COLUMN resolved_by VARCHAR(60)",
+            "ALTER TABLE alerts ADD COLUMN resolved_at DATETIME",
+            "ALTER TABLE alerts ADD COLUMN silenced_until DATETIME",
+        ]
+        for sql in migrations:
+            try:
+                conn.execute(db.text(sql))
+                conn.commit()
+                print(f"[Cortex] Migration applied: {sql[:60]}…")
+            except Exception:
+                # Column already exists — expected on any run after the first
+                pass
+
+
+# ── DB Seed ────────────────────────────────────────────────────────
 
 def _seed_if_empty():
     """Populate the DB with realistic sample data if tables are empty."""

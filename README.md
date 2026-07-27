@@ -10,13 +10,19 @@
 ## 📋 Table of Contents
 - [Overview](#overview)
 - [Architecture](#architecture)
-- [Self-Healing Flow](#self-healing-flow)
+- [Technology Stack](#technology-stack)
+- [Screenshots](#screenshots)
+- [Self-Healing AI Workflow](#self-healing-flow-ai-incident-timeline)
+- [TEE Workflow](#tee-workflow)
 - [Features](#features)
+- [Folder Structure](#folder-structure)
 - [Getting Started](#getting-started)
 - [API Reference](#api-reference)
 - [Environment Variables](#environment-variables)
 - [Deployment Guide](#deployment-guide)
 - [Security](#security)
+- [Future Roadmap](#future-roadmap)
+- [License](#license)
 
 ---
 
@@ -67,8 +73,34 @@ graph TD
     Prometheus -.-> API
     
     Engine -->|execute strategy| K8s
+    Engine -->|execute strategy| K8s
     Engine -->|auto retry| Jenkins
 ```
+
+---
+
+## 🛠️ Technology Stack
+
+- **Backend:** Flask, Python 3.10+, SQLAlchemy
+- **Machine Learning:** Scikit-Learn (RandomForest)
+- **Frontend:** HTML5, Vanilla JS, Glassmorphism CSS
+- **DevSecOps:** Jenkins, Docker, Kubernetes
+- **Security:** Trivy, Syft, Cosign
+- **Observability:** Prometheus, Grafana
+- **Testing:** Pytest
+
+---
+
+## 📸 Screenshots
+
+*(Before uploading, place your screenshots in the `app/static/images/` folder and link them here)*
+
+- **Dashboard Preview:** `![Dashboard](app/static/images/dashboard.png)`
+- **Pipeline View:** `![Pipeline](app/static/images/pipeline.png)`
+- **Kubernetes Monitor:** `![Kubernetes](app/static/images/kubernetes.png)`
+- **AI Prediction:** `![AI Prediction](app/static/images/ai-prediction.png)`
+- **Self-Healing Incident Timeline:** `![Self Healing](app/static/images/self-healing.png)`
+- **TEE Security Status:** `![TEE](app/static/images/tee.png)`
 
 ---
 
@@ -105,6 +137,25 @@ sequenceDiagram
     Engine-->>API: Status = Healed
     deactivate Engine
     deactivate API
+```
+
+---
+
+## 🔒 TEE Workflow
+
+```mermaid
+sequenceDiagram
+    participant CI as Pipeline (Cosign)
+    participant TEE as Trusted Execution Environment
+    participant K8s as Kubernetes
+
+    CI->>TEE: Request attestation for signed image
+    activate TEE
+    Note over TEE: Simulated Intel SGX<br/>HMAC-SHA256 Integrity
+    TEE-->>TEE: Verify image signature
+    TEE-->>CI: Attestation Report (Security Score: 98/100)
+    deactivate TEE
+    CI->>K8s: Deploy image (if TEE verified)
 ```
 
 ---
@@ -162,6 +213,25 @@ erDiagram
 | Notifications            | ✅ Live  | Slack webhook + SMTP email escalation                     |
 | PDF/JSON Reports         | ✅ Live  | Downloadable pipeline + healing reports                   |
 | Authentication           | ✅ Live  | Session-based login                                       |
+
+---
+
+## 📁 Folder Structure
+
+```text
+CortexCICD/
+├── app/               # Main Flask app, routes, healing engine, templates
+├── docker/            # Dockerfiles for the API and workers
+├── jenkins/           # Pipeline scripts (Jenkinsfile with DevSecOps tools)
+├── kubernetes/        # K8s manifests (deployment, RBAC, services)
+├── ml/                # AI models, dataset generation, and prediction logic
+├── monitoring/        # Prometheus and Grafana dashboards
+├── reports/           # PDF and CSV report generation logic
+├── security/          # Secret scanning and Trivy/Syft/Cosign integrations
+├── tee/               # Trusted Execution Environment (Intel SGX simulation)
+├── tests/             # Comprehensive pytest suite (API, ML, Healing)
+└── requirements.txt   # Python dependencies
+```
 
 ---
 
@@ -408,13 +478,20 @@ The RBAC configuration in `kubernetes/healing-rbac.yaml` grants the healing agen
 
 ---
 
-## 🗺️ Roadmap
+## 🗺️ Future Roadmap
 
-- [x] Intel SGX simulation (TEE)
-- [x] SBOM generation with Syft
-- [x] Cosign image signing in the pipeline
-- [x] Trivy container scanning
-- [ ] Real Intel SGX hardware integration (production TEE)
-- [ ] Grafana alert webhook integration
-- [ ] GitHub Actions integration alongside Jenkins
-- [ ] Multi-cluster Kubernetes support
+While Version 1.0 establishes a robust foundation, future releases will focus on enterprise scalability and production-grade hardware integrations:
+
+- **PostgreSQL Support:** Migrate from SQLite to a robust PostgreSQL database.
+- **Intel SGX / AMD SEV:** Replace the simulated TEE with physical hardware enclaves.
+- **GitHub Actions / GitLab CI:** Expand integration beyond Jenkins.
+- **Multi-Cluster Kubernetes:** Support healing across federated environments.
+- **Event-Driven Architecture:** Refactor the polling scheduler to use Kafka or RabbitMQ.
+- **LLM-Assisted RCA:** Integrate large language models for deep root cause analysis summaries.
+- **Multi-User Auth & RBAC:** Implement granular user roles and detailed audit logs.
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

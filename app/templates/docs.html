@@ -13,17 +13,17 @@
   <!-- Top Navbar (matches landing page style) -->
   <nav class="navbar">
     <div class="logo">
-      <a href="{{ url_for('main.index') }}" style="display:flex;align-items:center;gap:0.6rem;">
-        <i class="fa-solid fa-microchip"></i>
+      <a href="{{ url_for('dashboard.index') }}" style="display:flex;align-items:center;gap:0.6rem;">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="height: 1.5em; width: auto; vertical-align: middle;">
         Cortex CI/CD
       </a>
     </div>
     <ul class="nav-links">
-      <li><a href="{{ url_for('main.index') }}" class="nav-item">Home</a></li>
-      <li><a href="{{ url_for('main.index') }}#features" class="nav-item">Features</a></li>
-      <li><a href="{{ url_for('main.dashboard') }}" class="nav-item">Dashboard</a></li>
-      <li><a href="{{ url_for('main.docs') }}" class="nav-item active">Documentation</a></li>
-      <li><a href="{{ url_for('main.login') }}" class="nav-item btn btn-secondary">Sign In</a></li>
+      <li><a href="{{ url_for('dashboard.index') }}" class="nav-item">Home</a></li>
+      <li><a href="{{ url_for('dashboard.index') }}#features" class="nav-item">Features</a></li>
+      <li><a href="{{ url_for('dashboard.dashboard') }}" class="nav-item">Dashboard</a></li>
+      <li><a href="{{ url_for('dashboard.docs') }}" class="nav-item active">Documentation</a></li>
+      <li><a href="{{ url_for('auth.login') }}" class="nav-item btn btn-secondary">Sign In</a></li>
     </ul>
   </nav>
 
@@ -676,15 +676,15 @@ kubectl cluster-info</pre>
 
     <!-- Quick Links -->
     <div class="quick-links">
-      <a href="{{ url_for('main.pipeline') }}" class="ql-card">
+      <a href="{{ url_for('dashboard.pipeline') }}" class="ql-card">
         <div class="ql-icon teal"><i class="fa-solid fa-rocket"></i></div>
         <div class="ql-text"><strong>CI/CD Pipeline</strong><span>View &amp; trigger runs</span></div>
       </a>
-      <a href="{{ url_for('main.self_healing') }}" class="ql-card">
+      <a href="{{ url_for('dashboard.self_healing') }}" class="ql-card">
         <div class="ql-icon purple"><i class="fa-solid fa-gears"></i></div>
         <div class="ql-text"><strong>Self-Healing</strong><span>Healing event log</span></div>
       </a>
-      <a href="{{ url_for('main.settings') }}" class="ql-card">
+      <a href="{{ url_for('dashboard.settings') }}" class="ql-card">
         <div class="ql-icon gold"><i class="fa-solid fa-sliders"></i></div>
         <div class="ql-text"><strong>Settings</strong><span>Configure the platform</span></div>
       </a>

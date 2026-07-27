@@ -15,6 +15,10 @@ class PipelineRun(db.Model):
     risk_score  = db.Column(db.Integer, default=0)                       # 0-100
     created_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Jenkins integration — set when a real build is triggered
+    jenkins_build_number = db.Column(db.Integer, nullable=True)          # e.g. 142
+    jenkins_job_name     = db.Column(db.String(120), nullable=True)      # e.g. CortexCICD/Self-Healing-CI-CD
+
     # Alias so templates can use run.timestamp (human-readable)
     @property
     def timestamp(self):
@@ -86,8 +90,15 @@ class Alert(db.Model):
     title      = db.Column(db.String(120), nullable=False)
     severity   = db.Column(db.String(20), nullable=False)   # Critical | High | Medium | Low
     source     = db.Column(db.String(60), nullable=False)
-    status     = db.Column(db.String(20), nullable=False)   # Active | Resolved | Silenced
+    status     = db.Column(db.String(20), nullable=False)   # Active | Acknowledged | Silenced | Resolved | Archived
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Lifecycle tracking fields (v1.2)
+    acknowledged_by = db.Column(db.String(60),   nullable=True)
+    acknowledged_at = db.Column(db.DateTime,     nullable=True)
+    resolved_by     = db.Column(db.String(60),   nullable=True)
+    resolved_at     = db.Column(db.DateTime,     nullable=True)
+    silenced_until  = db.Column(db.DateTime,     nullable=True)
 
     @property
     def timestamp(self):

@@ -632,8 +632,8 @@ kubectl cluster-info</pre>
           <tr><td><span class="mb get">GET</span></td><td class="ep">/self-healing</td><td>Self-healing audit log — events, strategies applied, and outcomes.</td></tr>
           <tr><td><span class="mb get">GET</span></td><td class="ep">/alerts</td><td>Active and historical alerts with severity and routing metadata.</td></tr>
           <tr><td><span class="mb get">GET</span></td><td class="ep">/docs</td><td>This documentation page.</td></tr>
-          <tr><td><span class="mb post">POST</span></td><td class="ep">/login</td><td>Authenticate and establish a session. Body: <span class="ic">username</span>, <span class="ic">password</span>.</td></tr>
-          <tr><td><span class="mb get">GET</span></td><td class="ep">/logout</td><td>Terminate the current session and redirect to login.</td></tr>
+          <tr><td><span class="mb post">POST</span></td><td class="ep">/login</td><td>Authenticate and establish a session. Body: <span class="ic">username</span>, <span class="ic">password</span>, <span class="ic">csrf_token</span>.</td></tr>
+          <tr><td><span class="mb post">POST</span></td><td class="ep">/logout</td><td>Terminate the current session (CSRF-protected) and redirect to login.</td></tr>
         </tbody>
       </table>
     </section>

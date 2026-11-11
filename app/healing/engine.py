@@ -76,11 +76,27 @@ class HealingEngine:
 
         # ── Step 2: Choose strategy ───────────────────────────────
         from .strategies import choose_strategy, EscalateStrategy
+        from app.models import PlatformSetting
         strategy = choose_strategy(failure_type)
         logger.info("[HealingEngine] Strategy chosen: %s", strategy.name)
 
-        # ── Step 3: Execute strategy ──────────────────────────────
-        result = strategy.execute(context)
+        # ── Step 3: Execute strategy (respect /settings policy toggles) ─
+        if strategy.name == "Rollback" and not PlatformSetting.get_bool("auto_rollback", True):
+            logger.info("[HealingEngine] Auto Rollback disabled in settings — escalating.")
+            result = {
+                "success": False,
+                "strategy": strategy.name,
+                "action": "Auto rollback disabled in platform settings",
+            }
+        elif strategy.name == "Pod Restart" and not PlatformSetting.get_bool("auto_restart_pods", True):
+            logger.info("[HealingEngine] Auto Restart disabled in settings — escalating.")
+            result = {
+                "success": False,
+                "strategy": strategy.name,
+                "action": "Auto restart disabled in platform settings",
+            }
+        else:
+            result = strategy.execute(context)
 
         # ── Step 4: If primary failed, try escalation ─────────────
         if not result["success"]:
@@ -116,7 +132,13 @@ class HealingEngine:
         result["run_id"]       = run_id
         result["failure_type"] = failure_type
 
-        # Emit SSE event: healing completed
+        # Record Prometheus metric & emit SSE event
+        try:
+            from app.observability import record_healing_event
+            record_healing_event(strategy.name, outcome)
+        except Exception:
+            pass
+
         try:
             from app.events import publish
             publish("healing.completed", {

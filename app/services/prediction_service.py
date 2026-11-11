@@ -21,7 +21,7 @@ def get_prediction_for_run(run_id: str):
     prediction = predict_failure_risk(
         repo=run.repo,
         branch=run.branch,
-        files_changed=10,
+        files_changed=getattr(run, "files_changed", None) or 10,
         duration_secs=run.duration_secs,
         consecutive_failures=consec,
     )

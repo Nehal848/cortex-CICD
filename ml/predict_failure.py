@@ -6,6 +6,8 @@ On first import it trains the model on the mock dataset and caches it to disk.
 Falls back to the heuristic baseline if training data is unavailable.
 """
 
+import hashlib
+import hmac
 import os
 import random
 import logging
@@ -16,9 +18,39 @@ logger = logging.getLogger(__name__)
 
 _MODEL_DIR  = Path(__file__).parent / "models"
 _MODEL_PATH = _MODEL_DIR / "failure_predictor.pkl"
+_SIG_PATH   = _MODEL_DIR / "failure_predictor.pkl.sig"
 
 _model = None          # RandomForestClassifier
 _type_model = None     # RandomForestClassifier for failure type
+
+
+def _model_hmac_key() -> bytes:
+    """Derive HMAC key used to sign and verify cached ML pickle bundles."""
+    secret = (
+        os.getenv("CORTEX_ENCLAVE_MASTER_KEY")
+        or os.getenv("SECRET_KEY")
+        or "cortex-ml-dev-signing-key"
+    )
+    return hashlib.sha256(secret.encode("utf-8")).digest()
+
+
+def _sign_model_bytes(raw: bytes) -> str:
+    return hmac.new(_model_hmac_key(), raw, hashlib.sha256).hexdigest()
+
+
+def _verify_model_bytes(raw: bytes) -> bool:
+    if not _SIG_PATH.exists():
+        return False
+    expected = _SIG_PATH.read_text(encoding="utf-8").strip()
+    return hmac.compare_digest(expected, _sign_model_bytes(raw))
+
+
+def _save_model_bundle(bundle: dict) -> None:
+    """Serialize and HMAC-sign the model bundle atomically."""
+    _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    raw = pickle.dumps(bundle)
+    _MODEL_PATH.write_bytes(raw)
+    _SIG_PATH.write_text(_sign_model_bytes(raw), encoding="utf-8")
 
 # Failure type labels
 FAILURE_TYPES = [
@@ -64,12 +96,18 @@ def _load_or_train():
 
     if _MODEL_PATH.exists():
         try:
-            with open(_MODEL_PATH, "rb") as f:
-                bundle = pickle.load(f)
-            _model      = bundle["risk_model"]
-            _type_model = bundle["type_model"]
-            logger.info("[ML] Loaded cached model from %s", _MODEL_PATH)
-            return True
+            raw = _MODEL_PATH.read_bytes()
+            if not _verify_model_bytes(raw):
+                logger.warning(
+                    "[ML] Model integrity check failed (%s missing or tampered) — retraining.",
+                    _SIG_PATH.name,
+                )
+            else:
+                bundle = pickle.loads(raw)
+                _model      = bundle["risk_model"]
+                _type_model = bundle["type_model"]
+                logger.info("[ML] Loaded verified cached model from %s", _MODEL_PATH)
+                return True
         except Exception as exc:
             logger.warning("[ML] Failed to load cached model: %s — retraining.", exc)
 
@@ -139,9 +177,7 @@ def _train() -> bool:
         type_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
         type_model.fit(X_train, yt_train)
 
-        _MODEL_DIR.mkdir(parents=True, exist_ok=True)
-        with open(_MODEL_PATH, "wb") as f:
-            pickle.dump({"risk_model": risk_model, "type_model": type_model}, f)
+        _save_model_bundle({"risk_model": risk_model, "type_model": type_model})
 
         global _model, _type_model
         _model      = risk_model
@@ -155,6 +191,79 @@ def _train() -> bool:
     except Exception as exc:
         logger.error("[ML] Training failed: %s — using heuristic fallback.", exc)
         return False
+
+
+def retrain_from_database(min_samples: int = 5) -> dict:
+    """
+    Retrain the failure prediction models using real historical runs from the DB.
+    Falls back gracefully if database samples are below min_samples.
+    """
+    try:
+        from app.models import PipelineRun
+        import numpy as np
+        from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+
+        runs = PipelineRun.query.order_by(PipelineRun.created_at.desc()).all()
+        if len(runs) < min_samples:
+            return {
+                "retrained": False,
+                "reason": f"Insufficient database records ({len(runs)} < {min_samples}). Synthetic training kept.",
+                "total_records": len(runs)
+            }
+
+        X_rows = []
+        y_risks = []
+        y_types = []
+
+        for r in runs:
+            b_main = 1 if r.branch in ("main", "master") else 0
+            created = r.created_at
+            hour = created.hour if created else 12
+            dow = created.weekday() if created else 0
+            dur = r.duration_secs or 60
+            streak = 1 if r.status == "Failed" else 0
+            fc = getattr(r, "files_changed", None) or 10
+
+            X_rows.append([b_main, fc, hour, dow, dur, streak])
+
+            if r.status == "Failed":
+                risk = max(75, r.risk_score or 80)
+                ft_idx = 1
+            elif r.status == "Healed":
+                risk = max(60, r.risk_score or 65)
+                ft_idx = 2
+            else:
+                risk = min(25, r.risk_score or 10)
+                ft_idx = 0
+
+            y_risks.append(risk)
+            y_types.append(ft_idx)
+
+        X = np.array(X_rows)
+        yr = np.array(y_risks)
+        yt = np.array(y_types)
+
+        risk_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+        risk_model.fit(X, yr)
+
+        type_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+        type_model.fit(X, yt)
+
+        _save_model_bundle({"risk_model": risk_model, "type_model": type_model})
+
+        global _model, _type_model
+        _model = risk_model
+        _type_model = type_model
+
+        return {
+            "retrained": True,
+            "samples_used": len(runs),
+            "model_path": str(_MODEL_PATH),
+            "status": "Models successfully retrained from database telemetry."
+        }
+    except Exception as exc:
+        logger.error("[ML] Retraining error: %s", exc)
+        return {"retrained": False, "error": str(exc)}
 
 
 def predict_failure_risk(

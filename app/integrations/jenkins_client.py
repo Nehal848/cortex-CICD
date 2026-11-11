@@ -13,19 +13,30 @@ from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
 _jenkins_instance = None
+_jenkins_url_cached = None
 
 
 def _get_client():
-    """Lazily initialise the python-jenkins client."""
-    global _jenkins_instance
-    if _jenkins_instance is not None:
-        return _jenkins_instance
+    """Lazily initialise the python-jenkins client, respecting PlatformSetting updates."""
+    global _jenkins_instance, _jenkins_url_cached
 
-    url = os.getenv("JENKINS_URL", "")
+    db_url = None
+    try:
+        from app.models import PlatformSetting
+        db_url = PlatformSetting.get_value("jenkins_url")
+    except Exception:
+        db_url = None
+
+    url = (db_url or os.getenv("JENKINS_URL", "")).strip()
     user = os.getenv("JENKINS_USER", "")
     token = os.getenv("JENKINS_TOKEN", "")
 
+    if _jenkins_instance is not None and _jenkins_url_cached == url:
+        return _jenkins_instance
+
     if not url or not token:
+        _jenkins_instance = None
+        _jenkins_url_cached = None
         logger.info("[Jenkins] No credentials configured — using mock mode.")
         return None
 
@@ -34,6 +45,7 @@ def _get_client():
         server = jenkins.Jenkins(url, username=user, password=token)
         server.get_whoami()          # validate credentials
         _jenkins_instance = server
+        _jenkins_url_cached = url
         logger.info("[Jenkins] Connected to %s", url)
         return server
     except Exception as exc:

@@ -6,6 +6,10 @@ scrape_configs:
   - job_name: 'cortex-api'
     static_configs:
       - targets: ['cortex-api:5000']
+
+  - job_name: 'cortex-worker'
+    static_configs:
+      - targets: ['cortex-worker:9101']
     
   - job_name: 'prometheus'
     static_configs:

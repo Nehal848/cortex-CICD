@@ -24,7 +24,9 @@ def notify(event_type: str, payload: dict) -> dict:
     dict — {slack_sent, email_sent}
     """
     from . import slack, email as _email
+    from app.models import PlatformSetting
 
+    slack_enabled = PlatformSetting.get_bool("slack_notifications", True)
     results = {"slack_sent": False, "email_sent": False}
 
     run_id       = payload.get("run_id", "UNKNOWN")
@@ -36,15 +38,18 @@ def notify(event_type: str, payload: dict) -> dict:
     recommendations = payload.get("recommendations", [])
 
     if event_type == "failure":
-        results["slack_sent"] = slack.send_failure(run_id, failure_type, risk_score, recommendations)
+        if slack_enabled:
+            results["slack_sent"] = slack.send_failure(run_id, failure_type, risk_score, recommendations)
         results["email_sent"] = _email.send_failure_email(run_id, failure_type, recommendations, risk_score)
 
     elif event_type == "healed":
-        results["slack_sent"] = slack.send_healed(run_id, strategy, duration_ms)
+        if slack_enabled:
+            results["slack_sent"] = slack.send_healed(run_id, strategy, duration_ms)
         results["email_sent"] = _email.send_healing_report(run_id, strategy, outcome, duration_ms)
 
     elif event_type == "escalation":
-        results["slack_sent"] = slack.send_escalation(run_id, failure_type)
+        if slack_enabled:
+            results["slack_sent"] = slack.send_escalation(run_id, failure_type)
         results["email_sent"] = _email.send_failure_email(
             run_id, failure_type,
             ["⚠️ All automated healing strategies exhausted.", "Manual investigation required."],
@@ -55,11 +60,12 @@ def notify(event_type: str, payload: dict) -> dict:
         image  = payload.get("image", "unknown")
         crit   = payload.get("critical", 0)
         high   = payload.get("high", 0)
-        results["slack_sent"] = slack.send(
-            message=f"Security scan of `{image}` found *{crit} Critical* and *{high} High* vulnerabilities.",
-            title="🔒 Security Scan Alert",
-            color="danger" if crit > 0 else "warning",
-        )
+        if slack_enabled:
+            results["slack_sent"] = slack.send(
+                message=f"Security scan of `{image}` found *{crit} Critical* and *{high} High* vulnerabilities.",
+                title="🔒 Security Scan Alert",
+                color="danger" if crit > 0 else "warning",
+            )
     else:
         logger.warning("[Dispatcher] Unknown event_type: %s", event_type)
 

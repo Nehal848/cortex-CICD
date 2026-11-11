@@ -26,13 +26,13 @@ POLL_INTERVAL = 15  # seconds between full sweeps
 
 
 def start(app, db):
-    """Start the status poller background thread. Idempotent."""
+    """Start the status poller background thread (updates active app/db refs cleanly)."""
     global _thread, _app, _db
+    _app = app
+    _db  = db
     if _thread is not None and _thread.is_alive():
         return
 
-    _app = app
-    _db  = db
     _stop_event.clear()
     _thread = threading.Thread(target=_loop, daemon=True, name="StatusPoller")
     _thread.start()

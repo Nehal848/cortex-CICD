@@ -105,16 +105,62 @@ def restart_pod(pod_name: str, namespace: str | None = None) -> dict:
     return {"success": True, "message": f"[Mock] Pod {pod_name} restarted.", "mock": True}
 
 
+def _deployment_revision(obj) -> int:
+    """Extract numeric Kubernetes deployment revision annotation cleanly."""
+    annotations = getattr(getattr(obj, "metadata", None), "annotations", None) or {}
+    try:
+        return int(annotations.get("deployment.kubernetes.io/revision", 0))
+    except (TypeError, ValueError):
+        return 0
+
+
 def rollback_deployment(deployment_name: str, namespace: str | None = None) -> dict:
+    """
+    Roll back a Kubernetes Deployment using apps/v1 ReplicaSet history
+    (``kubectl rollout undo`` equivalent; avoids deprecated ``spec.rollbackTo``).
+    """
     ns = namespace or _namespace()
     if _load_config():
         try:
             from kubernetes import client as k8s_client
             apps = k8s_client.AppsV1Api()
-            # Trigger rollback by annotating with rollback revision
-            body = {"spec": {"rollbackTo": {"revision": 0}}}
+            dep = apps.read_namespaced_deployment(name=deployment_name, namespace=ns)
+            current_rev = _deployment_revision(dep)
+
+            match_labels = getattr(getattr(getattr(dep, "spec", None), "selector", None), "match_labels", None) or {"app": deployment_name}
+            label_selector = ",".join(f"{k}={v}" for k, v in match_labels.items())
+            rs_items = apps.list_namespaced_replica_set(namespace=ns, label_selector=label_selector).items
+
+            owned_rs = []
+            for rs in rs_items:
+                owners = getattr(getattr(rs, "metadata", None), "owner_references", None) or []
+                if owners and not any(o.kind == "Deployment" and o.name == deployment_name for o in owners):
+                    continue
+                rev = _deployment_revision(rs)
+                if rev > 0:
+                    owned_rs.append((rev, rs))
+
+            owned_rs.sort(key=lambda pair: pair[0], reverse=True)
+            prev_pair = next(((rev, rs) for rev, rs in owned_rs if current_rev == 0 or rev < current_rev), None)
+            if current_rev == 0 and len(owned_rs) >= 2:
+                prev_pair = owned_rs[1]
+            elif current_rev == 0:
+                prev_pair = None
+
+            if not prev_pair:
+                return {
+                    "success": False,
+                    "message": f"No previous ReplicaSet revision available to roll back {deployment_name}.",
+                }
+
+            target_rev, prev_rs = prev_pair
+            body = {"spec": {"template": prev_rs.spec.template}}
             apps.patch_namespaced_deployment(name=deployment_name, namespace=ns, body=body)
-            return {"success": True, "message": f"Deployment {deployment_name} rolled back."}
+            return {
+                "success": True,
+                "revision": target_rev,
+                "message": f"Deployment {deployment_name} rolled back to revision {target_rev}.",
+            }
         except Exception as exc:
             logger.error("[K8s] rollback_deployment error: %s", exc)
             return {"success": False, "message": str(exc)}

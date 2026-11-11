@@ -27,10 +27,21 @@ spec:
             cpu: "250m"
         livenessProbe:
           httpGet:
-            path: /
+            path: /livez
             port: 5000
           initialDelaySeconds: 15
           periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 5000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        env:
+        - name: DISABLE_EMBEDDED_WORKER
+          value: "true"
+        - name: REDIS_URL
+          value: "redis://redis-svc:6379/0"
 ---
 apiVersion: apps/v1
 kind: Deployment

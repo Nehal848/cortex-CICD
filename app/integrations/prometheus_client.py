@@ -21,9 +21,18 @@ _prom_available = None
 
 
 def _base_url() -> str:
-    global _PROM_URL
-    if _PROM_URL is None:
-        _PROM_URL = os.getenv("PROMETHEUS_URL", "http://localhost:9090").rstrip("/")
+    global _PROM_URL, _last_check
+    db_url = None
+    try:
+        from app.models import PlatformSetting
+        db_url = PlatformSetting.get_value("prometheus_url")
+    except Exception:
+        db_url = None
+
+    resolved = (db_url or os.getenv("PROMETHEUS_URL", "http://localhost:9090")).rstrip("/")
+    if resolved != _PROM_URL:
+        _PROM_URL = resolved
+        _last_check = 0  # re-probe when URL changes
     return _PROM_URL
 
 

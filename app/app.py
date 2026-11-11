@@ -9,10 +9,10 @@ if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
 from .db import db
-from .models import PipelineRun, Deployment, HealingEvent, Alert
+from .models import PipelineRun, Deployment, HealingEvent, Alert, User, PlatformSetting
 
 
-def create_app(test_config: dict | None = None):
+def create_app(test_config: dict | None = None, enable_background: bool = True):
     # ── Load .env ─────────────────────────────────────────────────
     try:
         from dotenv import load_dotenv
@@ -24,14 +24,51 @@ def create_app(test_config: dict | None = None):
     from .config import Config
     app.config.from_object(Config)
 
+    # Refresh runtime env overrides dynamically (after .env load or in tests)
+    for _env_key in (
+        "FLASK_ENV",
+        "SECRET_KEY",
+        "ADMIN_USERNAME",
+        "ADMIN_PASSWORD",
+        "CORTEX_API_TOKEN",
+        "REDIS_URL",
+        "JENKINS_URL",
+        "PROMETHEUS_URL",
+        "GITHUB_WEBHOOK_SECRET",
+        "JENKINS_WEBHOOK_SECRET",
+        "ALERTMANAGER_TOKEN",
+    ):
+        _val = os.getenv(_env_key)
+        if _val is not None:
+            app.config[_env_key] = _val
+            if _env_key == "FLASK_ENV":
+                app.config["ENV"] = _val
+
+    _proxy_cnt = os.getenv("TRUSTED_PROXY_COUNT")
+    if _proxy_cnt is not None:
+        try:
+            app.config["TRUSTED_PROXY_COUNT"] = int(_proxy_cnt)
+        except ValueError:
+            pass
+
+    if not test_config:
+        Config.validate_production_security()
+
     # Use SECRET_KEY from env, fall back to random
     app.secret_key = app.config.get("SECRET_KEY", os.urandom(24).hex())
 
-    # ── Database config ────────────────────────────────────────────
+    # ── Database config (respect DATABASE_URL, fall back to local SQLite) ─
     basedir = os.path.abspath(os.path.dirname(__file__))
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        "sqlite:///" + os.path.join(basedir, "cortex.db")
+    db_uri = (
+        os.getenv("DATABASE_URL")
+        or app.config.get("SQLALCHEMY_DATABASE_URI")
+        or "sqlite:///cortex.db"
     )
+    if db_uri.startswith("postgres://"):
+        db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+    if db_uri == "sqlite:///cortex.db":
+        db_uri = "sqlite:///" + os.path.join(basedir, "cortex.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_uri
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # Allow test_config to override (e.g., in-memory SQLite for tests)
@@ -53,12 +90,51 @@ def create_app(test_config: dict | None = None):
     app.register_blueprint(webhooks_bp)
     app.register_blueprint(health_bp)
 
-    # ── Create tables & seed on first run ─────────────────────────
+    # ── Expose CSRF token helper to all Jinja templates ────────────
+    from .http_security import get_csrf_token
+
+    @app.context_processor
+    def _inject_security_context():
+        return {"csrf_token": get_csrf_token}
+
+    # ── Prometheus observability (/metrics & HTTP counters) ─────────
+    try:
+        from .observability import init_observability
+        init_observability(app)
+    except Exception as exc:
+        app.logger.warning("[Observability] Prometheus init failed: %s", exc)
+
+    # ── Create tables & seed on first run (locked across workers) ───
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _startup_lock():
+        lock_file = None
+        try:
+            import fcntl
+            lock_path = os.path.join(basedir, ".cortex_init.lock")
+            lock_file = open(lock_path, "w")
+            fcntl.flock(lock_file, fcntl.LOCK_EX)
+        except Exception:
+            pass
+        try:
+            yield
+        finally:
+            if lock_file is not None:
+                try:
+                    import fcntl
+                    fcntl.flock(lock_file, fcntl.LOCK_UN)
+                except Exception:
+                    pass
+                lock_file.close()
+
     with app.app_context():
-        db.create_all()
-        _migrate_schema()   # Option B: safe ALTER TABLE for new columns
-        if not test_config:
-            _seed_if_empty()
+        with _startup_lock():
+            db.create_all()
+            _migrate_schema()   # Dialect-safe additive column migrations
+            _seed_defaults(app)
+            if not test_config:
+                _seed_if_empty()
 
     # ── Boot TEE enclave & migrate secrets ────────────────────────
     try:
@@ -67,21 +143,27 @@ def create_app(test_config: dict | None = None):
     except Exception as exc:
         app.logger.warning("[TEE] Could not initialise TEE: %s", exc)
 
+    _embedded_worker = (
+        enable_background
+        and not test_config
+        and os.getenv("DISABLE_EMBEDDED_WORKER", "false").lower() not in ("true", "1")
+    )
+
     # ── Start self-healing background scheduler ───────────────────
-    try:
-        from .healing import scheduler
-        scheduler.start(app, db, HealingEvent, PipelineRun)
-    except Exception as exc:
-        app.logger.warning("[Healing] Scheduler start failed: %s", exc)
+    if _embedded_worker:
+        try:
+            from .healing import scheduler
+            scheduler.start(app, db, HealingEvent, PipelineRun)
+        except Exception as exc:
+            app.logger.warning("[Healing] Scheduler start failed: %s", exc)
 
-    # ── Start pipeline status poller ──────────────────────────────
-    try:
-        from .services import status_poller
-        status_poller.start(app, db)
-    except Exception as exc:
-        app.logger.warning("[StatusPoller] Start failed: %s", exc)
+        # ── Start pipeline status poller ──────────────────────────
+        try:
+            from .services import status_poller
+            status_poller.start(app, db)
+        except Exception as exc:
+            app.logger.warning("[StatusPoller] Start failed: %s", exc)
 
-    # ── Train ML model in the background (non-blocking) ───────────
     # ── Train ML model in the background (non-blocking) ───────────
     try:
         import threading
@@ -96,7 +178,7 @@ def create_app(test_config: dict | None = None):
         pass
 
     # ── Start SSE metrics ticker (metrics.tick every 30s, heartbeat every 60s) ─
-    if not test_config:  # skip background threads during tests
+    if enable_background and not test_config:  # skip background threads during tests
         try:
             import threading as _t
             def _sse_ticker():
@@ -133,39 +215,90 @@ def create_app(test_config: dict | None = None):
     return app
 
 
-# ── Schema Migration Helper (Option B) ────────────────────────────
+# ── Schema Migration Helper ─────────────────────────────────────────
 
 def _migrate_schema():
     """
-    Safely add new columns to existing tables using raw SQLite ALTER TABLE.
-    SQLAlchemy's db.create_all() does not add columns to existing tables,
-    so we handle it manually here.  Each ALTER is wrapped in its own
-    try/except so a second startup is a no-op.
+    Safely add new columns to existing tables across SQLite and PostgreSQL
+    using ``sqlalchemy.inspect`` before issuing dialect-aware ``ALTER TABLE``.
     """
+    from sqlalchemy import inspect as sa_inspect
+
     engine = db.engine
-    with engine.connect() as conn:
-        migrations = [
-            # PipelineRun — Jenkins tracking columns (v1.1)
-            "ALTER TABLE pipeline_runs ADD COLUMN jenkins_build_number INTEGER",
-            "ALTER TABLE pipeline_runs ADD COLUMN jenkins_job_name VARCHAR(120)",
-            # Alert — lifecycle tracking columns (v1.2)
-            "ALTER TABLE alerts ADD COLUMN acknowledged_by VARCHAR(60)",
-            "ALTER TABLE alerts ADD COLUMN acknowledged_at DATETIME",
-            "ALTER TABLE alerts ADD COLUMN resolved_by VARCHAR(60)",
-            "ALTER TABLE alerts ADD COLUMN resolved_at DATETIME",
-            "ALTER TABLE alerts ADD COLUMN silenced_until DATETIME",
-        ]
-        for sql in migrations:
-            try:
+    inspector = sa_inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    dt_type = "TIMESTAMP" if engine.dialect.name in ("postgresql", "postgres") else "DATETIME"
+
+    column_migrations = [
+        # PipelineRun — Jenkins & telemetry columns
+        ("pipeline_runs", "jenkins_build_number", "INTEGER"),
+        ("pipeline_runs", "jenkins_job_name", "VARCHAR(120)"),
+        ("pipeline_runs", "files_changed", "INTEGER DEFAULT 10"),
+        ("pipeline_runs", "commit_message", "VARCHAR(255)"),
+        # Alert — lifecycle tracking columns (v1.2)
+        ("alerts", "acknowledged_by", "VARCHAR(60)"),
+        ("alerts", "acknowledged_at", dt_type),
+        ("alerts", "resolved_by", "VARCHAR(60)"),
+        ("alerts", "resolved_at", dt_type),
+        ("alerts", "silenced_until", dt_type),
+        # User — API token expiry tracking
+        ("users", "api_token_expires_at", dt_type),
+    ]
+
+    cols_cache = {}
+    for table_name, col_name, col_type in column_migrations:
+        if table_name not in existing_tables:
+            continue
+        if table_name not in cols_cache:
+            cols_cache[table_name] = {c["name"] for c in inspector.get_columns(table_name)}
+        if col_name not in cols_cache[table_name]:
+            sql = f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"
+            with engine.begin() as conn:
                 conn.execute(db.text(sql))
-                conn.commit()
-                print(f"[Cortex] Migration applied: {sql[:60]}…")
-            except Exception:
-                # Column already exists — expected on any run after the first
-                pass
+            cols_cache[table_name].add(col_name)
+            print(f"[Cortex] Migration applied: {sql}")
 
 
 # ── DB Seed ────────────────────────────────────────────────────────
+
+_DEFAULT_SETTINGS = {
+    "slack_notifications": "true",
+    "pagerduty_escalation": "true",
+    "cpu_threshold": "85",
+    "memory_threshold": "80",
+    "auto_rollback": "true",
+    "auto_restart_pods": "true",
+    "jenkins_url": os.getenv("JENKINS_URL", "http://localhost:8080"),
+    "prometheus_url": os.getenv("PROMETHEUS_URL", "http://localhost:9090"),
+}
+
+
+def _seed_defaults(app):
+    """Ensure default admin user and platform settings rows exist."""
+    from sqlalchemy.exc import IntegrityError
+    from werkzeug.security import generate_password_hash
+
+    admin_user = app.config.get("ADMIN_USERNAME", "admin")
+    admin_pass = app.config.get("ADMIN_PASSWORD", "admin")
+    if User.query.filter_by(username=admin_user).first() is None:
+        db.session.add(
+            User(
+                username=admin_user,
+                password_hash=generate_password_hash(admin_pass),
+                role="admin",
+            )
+        )
+
+    existing_keys = {s.key for s in PlatformSetting.query.all()}
+    for key, val in _DEFAULT_SETTINGS.items():
+        if key not in existing_keys:
+            db.session.add(PlatformSetting(key=key, value=str(val)))
+
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+
 
 def _seed_if_empty():
     """Populate the DB with realistic sample data if tables are empty."""
@@ -258,9 +391,14 @@ def _seed_if_empty():
               severity="Low",      source="Healing Agent", status="Resolved", created_at=now - timedelta(hours=12)),
     ]
 
+    from sqlalchemy.exc import IntegrityError
+
     db.session.add_all(runs + deployments + healing_events + alerts)
-    db.session.commit()
-    print("[Cortex] Database seeded with sample data.")
+    try:
+        db.session.commit()
+        print("[Cortex] Database seeded with sample data.")
+    except IntegrityError:
+        db.session.rollback()
 
 
 # Entry point ──────────────────────────────────────────────────────

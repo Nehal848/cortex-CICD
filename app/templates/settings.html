@@ -27,7 +27,7 @@
           </div>
           <div class="settings-action-input">
             <label class="custom-toggle-btn">
-              <input type="checkbox" checked>
+              <input type="checkbox" id="setting-slack-notifications" data-setting="slack_notifications" checked>
               <span class="toggle-track-slider">
                 <span class="toggle-text-label">ON</span>
                 <span class="toggle-knob-dot"></span>
@@ -44,7 +44,7 @@
           </div>
           <div class="settings-action-input">
             <label class="custom-toggle-btn">
-              <input type="checkbox" checked>
+              <input type="checkbox" id="setting-pagerduty-escalation" data-setting="pagerduty_escalation" checked>
               <span class="toggle-track-slider">
                 <span class="toggle-text-label">ON</span>
                 <span class="toggle-knob-dot"></span>
@@ -69,7 +69,7 @@
           </div>
           <div class="settings-action-input">
             <div class="number-input-wrapper">
-              <input type="number" class="settings-num-input" value="80">
+              <input type="number" min="1" max="100" class="settings-num-input" id="setting-cpu-threshold" data-setting="cpu_threshold" value="85">
               <span class="input-unit-label">%</span>
             </div>
           </div>
@@ -83,7 +83,7 @@
           </div>
           <div class="settings-action-input">
             <div class="number-input-wrapper">
-              <input type="number" class="settings-num-input" value="85">
+              <input type="number" min="1" max="100" class="settings-num-input" id="setting-memory-threshold" data-setting="memory_threshold" value="80">
               <span class="input-unit-label">%</span>
             </div>
           </div>
@@ -94,46 +94,54 @@
 
   </div>
 
-  <!-- Split Row 2: Alert Thresholds (duplicated for exact screenshot match) & Empty Panel -->
+  <!-- Split Row 2: Service Endpoints & API Token Access -->
   <div class="settings-split-row">
     
-    <!-- Left Panel: Duplicate Alert Thresholds -->
+    <!-- Left Panel: External Service Endpoints -->
     <div class="dashboard-card settings-card-item">
-      <h3 class="section-subtitle-serif border-bottom">Alert Thresholds</h3>
+      <h3 class="section-subtitle-serif border-bottom">Service Endpoints</h3>
       <div class="settings-control-list">
         
         <div class="settings-control-item">
           <div class="settings-item-label-block">
-            <span class="settings-item-main-title">CPU Usage Threshold</span>
-            <span class="settings-item-sub-desc">Usage percentage to trigger system alerts.</span>
+            <span class="settings-item-main-title">Jenkins Base URL</span>
+            <span class="settings-item-sub-desc">CI controller endpoint for build triggers & polling.</span>
           </div>
           <div class="settings-action-input">
-            <div class="number-input-wrapper">
-              <input type="number" class="settings-num-input" value="80">
-              <span class="input-unit-label">%</span>
-            </div>
+            <input type="url" class="settings-num-input" style="width: 210px; text-align: left;" id="setting-jenkins-url" data-setting="jenkins_url" value="http://localhost:8080">
           </div>
         </div>
 
         <div class="settings-control-item">
           <div class="settings-item-label-block">
-            <span class="settings-item-main-title">Memory Usage Threshold</span>
-            <span class="settings-item-sub-desc">Usage percentage to trigger system alerts.</span>
+            <span class="settings-item-main-title">Prometheus Base URL</span>
+            <span class="settings-item-sub-desc">Metrics server queried for live PromQL telemetry.</span>
           </div>
           <div class="settings-action-input">
-            <div class="number-input-wrapper">
-              <input type="number" class="settings-num-input" value="85">
-              <span class="input-unit-label">%</span>
-            </div>
+            <input type="url" class="settings-num-input" style="width: 210px; text-align: left;" id="setting-prometheus-url" data-setting="prometheus_url" value="http://localhost:9090">
           </div>
         </div>
 
       </div>
     </div>
 
-    <!-- Right Panel: Empty panel spacer (matches screenshot layout) -->
-    <div class="dashboard-card settings-card-item spacer-card-panel">
-      <!-- Empty panel spacer -->
+    <!-- Right Panel: Programmatic API Access -->
+    <div class="dashboard-card settings-card-item">
+      <h3 class="section-subtitle-serif border-bottom">API Authentication Token</h3>
+      <div class="settings-control-list">
+        <div class="settings-control-item">
+          <div class="settings-item-label-block">
+            <span class="settings-item-main-title">Bearer / X-API-Key Token</span>
+            <span class="settings-item-sub-desc">Generate a scoped API token for CI/CLI automation.</span>
+          </div>
+          <div class="settings-action-input">
+            <button type="button" class="btn" id="btn-generate-api-token" style="padding: 6px 12px; font-size: 0.85rem;">Generate Token</button>
+          </div>
+        </div>
+        <div class="settings-control-item" id="api-token-output-row" style="display: none;">
+          <code id="api-token-output" style="font-size: 0.8rem; word-break: break-all;"></code>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -152,13 +160,13 @@
         </div>
         <div class="settings-action-dual-block">
           <label class="custom-toggle-btn">
-            <input type="checkbox" checked>
+            <input type="checkbox" id="setting-auto-rollback" data-setting="auto_rollback" checked>
             <span class="toggle-track-slider">
               <span class="toggle-text-label">ON</span>
               <span class="toggle-knob-dot"></span>
             </span>
           </label>
-          <select class="settings-action-select">
+          <select class="settings-action-select" data-setting-sync="auto_rollback">
             <option>Enabled</option>
             <option>Disabled</option>
           </select>
@@ -173,15 +181,15 @@
         </div>
         <div class="settings-action-dual-block">
           <label class="custom-toggle-btn">
-            <input type="checkbox" checked>
+            <input type="checkbox" id="setting-auto-restart-pods" data-setting="auto_restart_pods" checked>
             <span class="toggle-track-slider">
               <span class="toggle-text-label">ON</span>
               <span class="toggle-knob-dot"></span>
             </span>
           </label>
-          <select class="settings-action-select opacity-muted">
-            <option>Disabled</option>
+          <select class="settings-action-select" data-setting-sync="auto_restart_pods">
             <option>Enabled</option>
+            <option>Disabled</option>
           </select>
         </div>
       </div>

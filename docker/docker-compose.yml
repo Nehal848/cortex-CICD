@@ -1,17 +1,49 @@
 version: "3.8"
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=cortex
+      - POSTGRES_PASSWORD=cortex
+      - POSTGRES_DB=cortex
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cortex -d cortex"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   cortex-api:
-    build: 
+    build:
       context: ../
       dockerfile: docker/Dockerfile.api
     ports:
       - "5000:5000"
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - SECRET_KEY=${SECRET_KEY:-dev-local-compose-secret-change-me}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+      - JENKINS_WEBHOOK_SECRET=${JENKINS_WEBHOOK_SECRET:-}
+      - ALERTMANAGER_TOKEN=${ALERTMANAGER_TOKEN:-}
+      - CORTEX_ENCLAVE_MASTER_KEY=${CORTEX_ENCLAVE_MASTER_KEY:-}
+      - ENFORCE_CSRF=${ENFORCE_CSRF:-true}
+      - STRICT_WEBHOOK_VERIFICATION=${STRICT_WEBHOOK_VERIFICATION:-false}
+      - DATABASE_URL=postgresql://cortex:cortex@postgres:5432/cortex
       - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_URL=http://prometheus:9090
+      - JENKINS_URL=http://jenkins:8080
+      - DISABLE_EMBEDDED_WORKER=true
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ../app:/app/app
 
@@ -19,12 +51,24 @@ services:
     build:
       context: ../
       dockerfile: docker/Dockerfile.worker
+    ports:
+      - "9101:9101"
     environment:
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - SECRET_KEY=${SECRET_KEY:-dev-local-compose-secret-change-me}
+      - CORTEX_ENCLAVE_MASTER_KEY=${CORTEX_ENCLAVE_MASTER_KEY:-}
+      - WORKER_METRICS_PORT=9101
+      - DATABASE_URL=postgresql://cortex:cortex@postgres:5432/cortex
       - REDIS_URL=redis://redis:6379/0
+      - PROMETHEUS_URL=http://prometheus:9090
+      - JENKINS_URL=http://jenkins:8080
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Allow worker to spin up sandboxes
+      - /var/run/docker.sock:/var/run/docker.sock
 
   redis:
     image: "redis:alpine"
@@ -57,3 +101,4 @@ services:
 
 volumes:
   jenkins_home:
+  postgres_data:

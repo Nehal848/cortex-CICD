@@ -38,6 +38,7 @@
       {% endif %}
 
       <form action="{{ url_for('auth.login') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-group">
           <label for="username" class="form-label">Username</label>
           <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required autocomplete="username">

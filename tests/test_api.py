@@ -62,3 +62,19 @@ def test_api_tee_status(client):
     data = response.get_json()
     assert data["overall_status"] == "Secure"
     assert "enclave" in data
+
+def test_api_security_sbom(client):
+    """Verify Syft SBOM generation endpoint."""
+    response = client.post("/api/security/sbom", json={"image": "cortex-api:v2.4.1"})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "packages" in data
+    assert data["image"] == "cortex-api:v2.4.1"
+
+def test_api_security_cosign_verify(client):
+    """Verify Cosign verification endpoint."""
+    response = client.post("/api/security/cosign/verify", json={"image": "cortex-api:v2.4.1"})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["verified"] is True
+    assert data["status"] == "VALID"

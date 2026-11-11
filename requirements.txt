@@ -9,8 +9,10 @@ MarkupSafe==3.0.3
 click==8.4.2
 python-dotenv==1.2.2
 
-# ── Database ───────────────────────────────────────────────────────
-# SQLite is built into Python — no extra package needed
+# ── Production Server, Database & Cache ───────────────────────────
+gunicorn>=21.2.0
+psycopg2-binary>=2.9.9
+redis>=5.0.0
 
 # ── Integrations ──────────────────────────────────────────────────
 python-jenkins==1.8.0          # Jenkins REST API client

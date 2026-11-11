@@ -31,3 +31,28 @@ def test_predict_heuristic_fallback():
         # Risk should be elevated due to feature branch and many files
         assert result1["risk_score"] > 50
         assert result1["failure_type"] != "None"
+
+
+def test_retrain_from_database(app):
+    """Verify that retrain_from_database can be invoked against the test DB."""
+    from ml.predict_failure import retrain_from_database
+    from app.models import PipelineRun
+    from app.db import db
+
+    # Seed 5 sample runs
+    for i in range(5):
+        run = PipelineRun(
+            run_id=f"RUN-TEST-{i}",
+            repo="CortexCICD/TestRepo",
+            branch="main" if i % 2 == 0 else "feature/test",
+            status="Success" if i % 2 == 0 else "Failed",
+            triggered_by="GitPush",
+            duration_secs=100 + i * 20,
+            risk_score=20 + i * 15,
+        )
+        db.session.add(run)
+    db.session.commit()
+
+    res = retrain_from_database(min_samples=3)
+    assert res["retrained"] is True
+    assert res["samples_used"] >= 5

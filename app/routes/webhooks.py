@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import logging
 import os
+import uuid
 from datetime import datetime
 
 from flask import Blueprint, request, jsonify, current_app
@@ -22,13 +23,46 @@ logger      = logging.getLogger(__name__)
 
 # ── Helpers ────────────────────────────────────────────────────────
 
+def _is_strict_webhook_mode() -> bool:
+    return (
+        current_app.config.get("ENV") == "production"
+        or os.getenv("FLASK_ENV") == "production"
+        or bool(current_app.config.get("STRICT_WEBHOOK_VERIFICATION", False))
+    )
+
+
+def _verify_shared_token(config_key: str, alt_header: str) -> bool:
+    """
+    Validate a shared webhook bearer/header secret using constant-time comparison.
+    Fails closed when running in production / strict verification mode.
+    """
+    secret = current_app.config.get(config_key) or os.getenv(config_key, "")
+    if not secret:
+        if _is_strict_webhook_mode():
+            logger.error("[Webhook] Production/strict mode active but %s not configured — failing closed.", config_key)
+            return False
+        return True
+
+    auth_header = request.headers.get("Authorization", "")
+    presented = ""
+    if auth_header.lower().startswith("bearer "):
+        presented = auth_header[7:].strip()
+    if not presented:
+        presented = request.headers.get(alt_header, "").strip()
+    return bool(presented) and hmac.compare_digest(presented, secret)
+
+
 def _verify_github_signature(payload_bytes: bytes, signature_header: str | None) -> bool:
     """Validate the X-Hub-Signature-256 header from GitHub."""
-    secret = current_app.config.get("GITHUB_WEBHOOK_SECRET", "")
+    secret = current_app.config.get("GITHUB_WEBHOOK_SECRET") or os.getenv("GITHUB_WEBHOOK_SECRET", "")
     if not secret:
-        # No secret configured — accept all (dev mode)
+        if _is_strict_webhook_mode():
+            logger.error("[Webhook/GitHub] Production mode active but GITHUB_WEBHOOK_SECRET not configured — failing closed.")
+            return False
+        # Development / test mode fallback
         logger.warning("[Webhook/GitHub] GITHUB_WEBHOOK_SECRET not set — skipping HMAC check.")
         return True
+
     if not signature_header or not signature_header.startswith("sha256="):
         return False
     expected = "sha256=" + hmac.new(
@@ -80,8 +114,24 @@ def github_webhook():
         if not branch or branch == "gh-pages":
             return jsonify({"status": "skipped", "reason": "non-code branch"}), 200
 
-        logger.info("[Webhook/GitHub] Push to %s/%s by %s", repo, branch, pusher)
-        return _trigger_from_webhook(repo, branch, triggered_by="GitPush")
+        changed_files = set()
+        for commit in data.get("commits") or []:
+            if isinstance(commit, dict):
+                changed_files.update(commit.get("added") or [])
+                changed_files.update(commit.get("modified") or [])
+                changed_files.update(commit.get("removed") or [])
+        files_changed = len(changed_files) if changed_files else 10
+        head_commit = data.get("head_commit") or {}
+        commit_msg = (head_commit.get("message") or "").splitlines()[0][:250] if isinstance(head_commit, dict) and head_commit.get("message") else None
+
+        logger.info(
+            "[Webhook/GitHub] Push to %s/%s by %s (files=%d)",
+            repo, branch, pusher, files_changed,
+        )
+        return _trigger_from_webhook(
+            repo, branch, triggered_by="GitPush",
+            files_changed=files_changed, commit_message=commit_msg,
+        )
 
     elif event == "pull_request":
         action = data.get("action", "")
@@ -91,9 +141,14 @@ def github_webhook():
         pr     = data.get("pull_request", {})
         branch = pr.get("head", {}).get("ref", "unknown")
         repo   = data.get("repository", {}).get("full_name", "unknown/unknown")
+        pr_files = int(pr.get("changed_files") or 10)
+        pr_title = str(pr.get("title") or "")[:250] or None
 
-        logger.info("[Webhook/GitHub] PR %s on %s/%s", action, repo, branch)
-        return _trigger_from_webhook(repo, branch, triggered_by="PullRequest")
+        logger.info("[Webhook/GitHub] PR %s on %s/%s (files=%d)", action, repo, branch, pr_files)
+        return _trigger_from_webhook(
+            repo, branch, triggered_by="PullRequest",
+            files_changed=pr_files, commit_message=pr_title,
+        )
 
     elif event == "ping":
         return jsonify({"status": "pong"}), 200
@@ -101,11 +156,23 @@ def github_webhook():
     return jsonify({"status": "ignored", "event": event}), 200
 
 
-def _trigger_from_webhook(repo: str, branch: str, triggered_by: str):
+def _trigger_from_webhook(
+    repo: str,
+    branch: str,
+    triggered_by: str,
+    files_changed: int = 10,
+    commit_message: str | None = None,
+):
     """Create a PipelineRun record and trigger Jenkins build."""
     try:
         from app.services.pipeline_service import trigger_pipeline
-        result = trigger_pipeline(repo, branch, triggered_by=triggered_by)
+        result = trigger_pipeline(
+            repo,
+            branch,
+            triggered_by=triggered_by,
+            files_changed=files_changed,
+            commit_message=commit_message,
+        )
         run = result["run"]
         return jsonify({
             "status":  "triggered",
@@ -125,28 +192,25 @@ def jenkins_webhook():
     """
     Receives build-completed events from the Jenkins
     Generic Webhook Trigger plugin.
-
-    Expected JSON body:
-    {
-      "run_id":        "RUN-4820",    // CortexCICD run ID (set as Jenkins param)
-      "job_name":      "CortexCICD/Self-Healing-CI-CD",
-      "build_number":  142,
-      "result":        "SUCCESS",     // SUCCESS | FAILURE | ABORTED | UNSTABLE
-      "duration_ms":   45000,
-      "console_log":   "..."          // optional
-    }
+    Requires JENKINS_WEBHOOK_SECRET (Authorization: Bearer or X-Jenkins-Token)
+    when configured or in production/strict mode.
     """
+    if not _verify_shared_token("JENKINS_WEBHOOK_SECRET", "X-Jenkins-Token"):
+        logger.warning("[Webhook/Jenkins] Unauthorized request rejected.")
+        return jsonify({"error": "Unauthorized"}), 401
+
     data = request.get_json(silent=True) or {}
+    from app.validation import validate_webhook_jenkins
+    cleaned, errors = validate_webhook_jenkins(data)
+    if errors:
+        return jsonify({"error": errors[0], "errors": errors}), 400
 
-    run_id       = data.get("run_id")
-    job_name     = data.get("job_name", "CortexCICD/Self-Healing-CI-CD")
-    build_number = data.get("build_number")
-    result       = data.get("result", "UNKNOWN")
-    duration_ms  = data.get("duration_ms", 0)
-    console_log  = data.get("console_log", "")
-
-    if not run_id:
-        return jsonify({"error": "run_id is required"}), 400
+    run_id       = cleaned["run_id"]
+    job_name     = cleaned["job_name"] or "CortexCICD/Self-Healing-CI-CD"
+    build_number = cleaned["build_number"]
+    result       = cleaned["result"]
+    duration_ms  = cleaned["duration_ms"]
+    console_log  = cleaned["console_log"]
 
     logger.info("[Webhook/Jenkins] Build event: %s → %s (build #%s)",
                 run_id, result, build_number)
@@ -225,12 +289,9 @@ def prometheus_webhook():
       ]
     }
     """
-    # Optional: validate a shared token
-    token = current_app.config.get("ALERTMANAGER_TOKEN", "")
-    if token:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header != f"Bearer {token}":
-            return jsonify({"error": "Unauthorized"}), 401
+    if not _verify_shared_token("ALERTMANAGER_TOKEN", "X-Alertmanager-Token"):
+        logger.warning("[Webhook/Prometheus] Unauthorized request rejected.")
+        return jsonify({"error": "Unauthorized"}), 401
 
     data   = request.get_json(silent=True) or {}
     alerts = data.get("alerts", [])
@@ -301,10 +362,12 @@ def _try_healing_from_alert(labels: dict, annotations: dict, triggered: list):
     Map Prometheus alert labels to CortexCICD failure types and
     trigger the healing engine for infrastructure alerts.
     """
+    from app.validation import sanitize_k8s_identifier
+
     alert_name = labels.get("alertname", "").lower()
-    pod_name   = labels.get("pod", labels.get("pod_name", ""))
-    namespace  = labels.get("namespace", "default")
-    deployment = labels.get("deployment", labels.get("app", "cortex-api"))
+    pod_name   = sanitize_k8s_identifier(labels.get("pod") or labels.get("pod_name"), "cortex-api-pod")
+    namespace  = sanitize_k8s_identifier(labels.get("namespace"), "default")
+    deployment = sanitize_k8s_identifier(labels.get("deployment") or labels.get("app"), "cortex-api")
 
     # Map Prometheus alert names → healing contexts
     ALERT_MAP = {
@@ -333,8 +396,8 @@ def _try_healing_from_alert(labels: dict, annotations: dict, triggered: list):
         from app.models import PipelineRun
         from app.healing import scheduler as healing_scheduler
 
-        # Create a synthetic run ID for infra-triggered healing
-        run_id = f"INFRA-{int(datetime.utcnow().timestamp())}"
+        # Create a unique synthetic run ID for infra-triggered healing
+        run_id = f"INFRA-{int(datetime.utcnow().timestamp())}-{uuid.uuid4().hex[:6]}"
         run = PipelineRun(
             run_id=run_id,
             repo="CortexCICD/Self-Healing-CI-CD",
@@ -350,7 +413,7 @@ def _try_healing_from_alert(labels: dict, annotations: dict, triggered: list):
 
         context = {
             "failure_type":     matched_failure,
-            "pod_name":         pod_name or "cortex-api-pod",
+            "pod_name":         pod_name,
             "namespace":        namespace,
             "deployment_name":  deployment,
         }

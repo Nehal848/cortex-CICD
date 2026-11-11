@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}Cortex CI/CD{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.1') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -72,10 +73,13 @@
           <span class="link-icon-box"><i class="fa-solid fa-gear"></i></span>
           <span>Settings</span>
         </a>
-        <a href="{{ url_for('auth.logout') }}" class="sidebar-link logout-link">
-          <span class="link-icon-box"><i class="fa-solid fa-right-from-bracket"></i></span>
-          <span>Log out</span>
-        </a>
+        <form action="{{ url_for('auth.logout') }}" method="POST" style="margin: 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="sidebar-link logout-link" style="width: 100%; background: none; border: none; cursor: pointer; text-align: left;">
+            <span class="link-icon-box"><i class="fa-solid fa-right-from-bracket"></i></span>
+            <span>Log out</span>
+          </button>
+        </form>
       </div>
     </aside>
 

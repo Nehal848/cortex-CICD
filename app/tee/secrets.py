@@ -16,6 +16,7 @@ _SENSITIVE_KEYS = [
     "JENKINS_TOKEN",
     "SLACK_WEBHOOK_URL",
     "SMTP_PASS",
+    "SMTP_PASSWORD",
 ]
 
 

@@ -6,7 +6,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Cortex API runs on 5000
+# Cortex API runs on 5000 via multi-threaded Gunicorn (supports persistent SSE streams)
 EXPOSE 5000
 
-CMD ["python", "-m", "flask", "run", "--host=0.0.0.0"]
+CMD ["gunicorn", "--worker-class", "gthread", "--threads", "4", "--workers", "2", "--timeout", "120", "-b", "0.0.0.0:5000", "wsgi:application"]

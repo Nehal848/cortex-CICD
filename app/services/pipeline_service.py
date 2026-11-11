@@ -1,6 +1,12 @@
+import threading
+import time
+import uuid
 from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 from app.db import db
 from app.models import PipelineRun, Deployment, HealingEvent, Alert
+
+_run_id_lock = threading.Lock()
 
 
 def get_dashboard_stats():
@@ -48,7 +54,13 @@ def get_consecutive_failures(repo: str, branch: str) -> int:
     return count
 
 
-def trigger_pipeline(job_name: str, branch: str, triggered_by: str = "Manual"):
+def trigger_pipeline(
+    job_name: str,
+    branch: str,
+    triggered_by: str = "Manual",
+    files_changed: int = 10,
+    commit_message: str | None = None,
+):
     """
     Trigger a Jenkins build and create a PipelineRun record.
 
@@ -78,34 +90,72 @@ def trigger_pipeline(job_name: str, branch: str, triggered_by: str = "Manual"):
     except Exception as exc:
         jenkins_result = {"success": False, "message": str(exc), "mock": True}
 
-    last    = PipelineRun.query.order_by(PipelineRun.id.desc()).first()
+    consec = get_consecutive_failures(job_name, branch)
+    computed_risk = 0
+    try:
+        from ml.predict_failure import predict_failure_risk
+        pred = predict_failure_risk(
+            repo=job_name,
+            branch=branch,
+            files_changed=files_changed or 10,
+            duration_secs=0,
+            consecutive_failures=consec,
+        )
+        computed_risk = int(pred.get("risk_score", 0))
+    except Exception as exc:
+        logger.warning("[Pipeline] Risk prediction fallback: %s", exc)
 
-    # Find the highest numeric RUN-<N> suffix, skipping non-numeric IDs
-    new_num = 4820
-    all_runs = PipelineRun.query.filter(
-        PipelineRun.run_id.like("RUN-%")
-    ).all()
-    for r in all_runs:
-        try:
-            n = int(r.run_id.split("-", 1)[1])
-            if n >= new_num:
-                new_num = n + 1
-        except (ValueError, IndexError):
-            pass
-    new_run = PipelineRun(
-        run_id=f"RUN-{new_num}",
-        repo=job_name,
-        branch=branch,
-        status="In Progress",
-        triggered_by=triggered_by,
-        duration_secs=0,
-        risk_score=0,
-        created_at=datetime.utcnow(),
-        jenkins_build_number=jenkins_build_num,
-        jenkins_job_name=job_name,
-    )
-    db.session.add(new_run)
-    db.session.commit()
+    new_run = None
+    with _run_id_lock:
+        # Find the highest numeric RUN-<N> suffix, skipping non-numeric IDs
+        new_num = 4820
+        all_runs = PipelineRun.query.filter(
+            PipelineRun.run_id.like("RUN-%")
+        ).all()
+        for r in all_runs:
+            try:
+                n = int(r.run_id.split("-", 1)[1])
+                if n >= new_num:
+                    new_num = n + 1
+            except (ValueError, IndexError):
+                pass
+
+        for attempt in range(5):
+            candidate_id = (
+                f"RUN-{new_num + attempt}"
+                if attempt < 4
+                else f"RUN-{int(time.time())}-{uuid.uuid4().hex[:4]}"
+            )
+            candidate_run = PipelineRun(
+                run_id=candidate_id,
+                repo=job_name,
+                branch=branch,
+                status="In Progress",
+                triggered_by=triggered_by,
+                duration_secs=0,
+                risk_score=computed_risk,
+                created_at=datetime.utcnow(),
+                jenkins_build_number=jenkins_build_num,
+                jenkins_job_name=job_name,
+                files_changed=files_changed or 10,
+                commit_message=(commit_message[:250] if commit_message else None),
+            )
+            db.session.add(candidate_run)
+            try:
+                db.session.commit()
+                new_run = candidate_run
+                break
+            except IntegrityError:
+                db.session.rollback()
+
+    if new_run is None:
+        raise RuntimeError("Failed to allocate unique pipeline run_id after retries")
+
+    try:
+        from app.observability import record_pipeline_event
+        record_pipeline_event("In Progress", triggered_by)
+    except Exception:
+        pass
 
     # SSE: pipeline started
     try:

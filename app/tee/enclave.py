@@ -22,11 +22,25 @@ _KEY_FILE = Path(__file__).parent / ".enclave_key"
 # ── Enclave key management ─────────────────────────────────────────
 
 def _get_or_create_enclave_key() -> bytes:
-    """32-byte AES key, persisted to .enclave_key (simulates SGX sealing key)."""
+    """
+    32-byte AES key. Derives deterministically from ``CORTEX_ENCLAVE_MASTER_KEY``
+    when configured (recommended for stateless/containerized deployments), or
+    persists a sealed key file to ``.enclave_key`` with owner-only permissions.
+    """
+    import hashlib
+
+    master = os.getenv("CORTEX_ENCLAVE_MASTER_KEY", "").strip()
+    if master:
+        return hashlib.sha256(f"cortex-enclave-seal:{master}".encode("utf-8")).digest()
+
     if _KEY_FILE.exists():
         return _KEY_FILE.read_bytes()
     key = os.urandom(32)
     _KEY_FILE.write_bytes(key)
+    try:
+        os.chmod(_KEY_FILE, 0o600)
+    except OSError:
+        pass
     logger.info("[TEE] Enclave key generated and sealed to %s", _KEY_FILE)
     return key
 

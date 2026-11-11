@@ -38,39 +38,91 @@ def scan_image(image_name: str) -> dict:
     dict
         {image, critical, high, medium, low, total, vulnerabilities, scan_time, source}
     """
+    if image_name.startswith("-"):
+        return {
+            "image": image_name,
+            "critical": 0, "high": 0, "medium": 0, "low": 0, "total": 0,
+            "vulnerabilities": [],
+            "source": "validation",
+            "error": "Invalid container image name.",
+        }
+
     if _trivy_available():
         try:
             cmd = [
                 _trivy_path(), "image",
                 "--format", "json",
                 "--quiet",
-                image_name
+                "--",
+                image_name,
             ]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             if result.returncode == 0:
                 data = json.loads(result.stdout)
                 return _parse_trivy_output(image_name, data)
-            else:
-                logger.warning("[Trivy] scan failed: %s", result.stderr[:200])
+            logger.warning("[Trivy] scan failed: %s", result.stderr[:200])
+            return {
+                "image": image_name,
+                "critical": 0, "high": 0, "medium": 0, "low": 0, "total": 0,
+                "vulnerabilities": [],
+                "source": "trivy-cli",
+                "error": (result.stderr or "Trivy image scan failed.")[:300],
+            }
         except subprocess.TimeoutExpired:
             logger.error("[Trivy] scan timed out for %s", image_name)
+            return {
+                "image": image_name,
+                "critical": 0, "high": 0, "medium": 0, "low": 0, "total": 0,
+                "vulnerabilities": [],
+                "source": "trivy-cli",
+                "error": "Trivy image scan timed out.",
+            }
         except Exception as exc:
             logger.error("[Trivy] error: %s", exc)
+            return {
+                "image": image_name,
+                "critical": 0, "high": 0, "medium": 0, "low": 0, "total": 0,
+                "vulnerabilities": [],
+                "source": "trivy-cli",
+                "error": "Trivy image scan failed unexpectedly.",
+            }
 
     return _mock_scan(image_name)
 
 
 def scan_filesystem(path: str = ".") -> dict:
     """Scan the filesystem for vulnerabilities in dependencies."""
+    if path.startswith("-"):
+        return {
+            "image": f"filesystem:{path}",
+            "critical": 0, "high": 0, "medium": 0, "low": 0, "total": 0,
+            "vulnerabilities": [],
+            "source": "validation",
+            "error": "Invalid filesystem path.",
+        }
     if _trivy_available():
         try:
-            cmd = [_trivy_path(), "fs", "--format", "json", "--quiet", path]
+            cmd = [_trivy_path(), "fs", "--format", "json", "--quiet", "--", path]
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             if result.returncode == 0:
                 data = json.loads(result.stdout)
                 return _parse_trivy_output(f"filesystem:{path}", data)
+            return {
+                "image": f"filesystem:{path}",
+                "critical": 0, "high": 0, "medium": 0, "low": 0, "total": 0,
+                "vulnerabilities": [],
+                "source": "trivy-cli",
+                "error": (result.stderr or "Trivy filesystem scan failed.")[:300],
+            }
         except Exception as exc:
             logger.error("[Trivy] filesystem scan error: %s", exc)
+            return {
+                "image": f"filesystem:{path}",
+                "critical": 0, "high": 0, "medium": 0, "low": 0, "total": 0,
+                "vulnerabilities": [],
+                "source": "trivy-cli",
+                "error": "Trivy filesystem scan failed unexpectedly.",
+            }
     return _mock_scan(f"filesystem:{path}")
 
 

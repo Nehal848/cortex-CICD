@@ -9,6 +9,7 @@ Kubernetes-compatible health probes:
 """
 
 import logging
+import os
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify
 
@@ -112,7 +113,8 @@ def livez():
             "active_alerts": Alert.query.filter_by(status="Active").count(),
         }
     except Exception as exc:
-        components["database"] = {"status": "error", "detail": str(exc)}
+        logger.warning("[Livez] DB check failed: %s", exc)
+        components["database"] = {"status": "error", "detail": "database unavailable"}
 
     # ── Healing Scheduler ─────────────────────────────────────────
     try:
@@ -124,7 +126,8 @@ def livez():
             "engine_ready": hs._engine is not None,
         }
     except Exception as exc:
-        components["healing_scheduler"] = {"status": "error", "detail": str(exc)}
+        logger.warning("[Livez] Scheduler check failed: %s", exc)
+        components["healing_scheduler"] = {"status": "error", "detail": "scheduler unavailable"}
 
     # ── Status Poller ─────────────────────────────────────────────
     try:
@@ -134,7 +137,8 @@ def livez():
             "interval": f"{status_poller.POLL_INTERVAL}s",
         }
     except Exception as exc:
-        components["status_poller"] = {"status": "error", "detail": str(exc)}
+        logger.warning("[Livez] StatusPoller check failed: %s", exc)
+        components["status_poller"] = {"status": "error", "detail": "poller unavailable"}
 
     # ── ML Model ──────────────────────────────────────────────────
     try:
@@ -145,18 +149,20 @@ def livez():
             "type_model":  type(_type_model).__name__ if _type_model else None,
         }
     except Exception as exc:
-        components["ml_model"] = {"status": "error", "detail": str(exc)}
+        logger.warning("[Livez] ML model check failed: %s", exc)
+        components["ml_model"] = {"status": "error", "detail": "model unavailable"}
 
     # ── Jenkins Integration ───────────────────────────────────────
     try:
         from app.integrations import jenkins_client as jc
         client_ready = jc._jenkins_instance is not None
         components["jenkins"] = {
-            "status": "connected" if client_ready else "mock_mode",
-            "url":    __import__("os").getenv("JENKINS_URL", "(not set)"),
+            "status":     "connected" if client_ready else "mock_mode",
+            "configured": bool(os.getenv("JENKINS_URL")),
         }
     except Exception as exc:
-        components["jenkins"] = {"status": "error", "detail": str(exc)}
+        logger.warning("[Livez] Jenkins check failed: %s", exc)
+        components["jenkins"] = {"status": "error", "detail": "jenkins check unavailable"}
 
     overall = all(
         c.get("status") in ("ok", "connected", "mock_mode", "degraded")

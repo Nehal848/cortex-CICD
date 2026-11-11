@@ -1,3 +1,50 @@
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getCsrfToken() {
+  const meta = document.querySelector('meta[name="csrf-token"]');
+  return meta ? meta.getAttribute("content") || "" : "";
+}
+
+// Automatically attach X-CSRF-Token on same-origin state-changing fetch calls
+if (typeof window.fetch === "function") {
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = function(input, init) {
+    const opts = Object.assign({}, init || {});
+    const method = (opts.method || (input && input.method) || "GET").toUpperCase();
+    const urlStr = typeof input === "string" ? input : (input && input.url) || "";
+    const isSameOrigin = !urlStr || urlStr.startsWith("/") || urlStr.startsWith(window.location.origin);
+    if (isSameOrigin && ["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+      const headers = new Headers(opts.headers || (input && input.headers) || {});
+      const tok = getCsrfToken();
+      if (tok && !headers.has("X-CSRF-Token")) {
+        headers.set("X-CSRF-Token", tok);
+      }
+      opts.headers = headers;
+    }
+    return _origFetch(input, opts);
+  };
+}
+
+function submitLogoutPost() {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = "/logout";
+  const inp = document.createElement("input");
+  inp.type = "hidden";
+  inp.name = "csrf_token";
+  inp.value = getCsrfToken();
+  form.appendChild(inp);
+  document.body.appendChild(form);
+  form.submit();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   initSSE();
   initTelemetryGauges();
@@ -88,26 +135,29 @@ function appendPipelineRun(data) {
   if (!tableBody) return;
   
   const tr = document.createElement("tr");
-  tr.id = `run-row-${data.run_id}`;
+  tr.id = `run-row-${escapeHtml(data.run_id)}`;
   
   const timeStr = new Date().toISOString().substring(11, 19);
+  const safeRunId = escapeHtml(data.run_id);
+  const safeBranch = escapeHtml(data.branch);
+  const safeTriggeredBy = escapeHtml(data.triggered_by);
   
   tr.innerHTML = `
     <td class="timeline-col">
       <div class="timeline-line"></div>
-      <div class="timeline-node" id="node-${data.run_id}" style="border-color: var(--text-muted);">
-        <i class="fa-solid fa-spinner fa-spin" id="icon-${data.run_id}" style="color: var(--text-muted);"></i>
+      <div class="timeline-node" id="node-${safeRunId}" style="border-color: var(--text-muted);">
+        <i class="fa-solid fa-spinner fa-spin" id="icon-${safeRunId}" style="color: var(--text-muted);"></i>
       </div>
     </td>
     <td>
       <div class="deploy-info">
-        <span class="deploy-name">${data.run_id} (${data.branch})</span>
+        <span class="deploy-name">${safeRunId} (${safeBranch})</span>
         <span class="deploy-time">${timeStr}</span>
       </div>
     </td>
-    <td class="deploy-date">${data.triggered_by}</td>
+    <td class="deploy-date">${safeTriggeredBy}</td>
     <td class="right-align">
-      <span class="run-status-pill" id="pill-${data.run_id}" style="background-color: rgba(255,255,255,0.1); color: var(--text-muted);">
+      <span class="run-status-pill" id="pill-${safeRunId}" style="background-color: rgba(255,255,255,0.1); color: var(--text-muted);">
         In Progress
       </span>
     </td>
@@ -174,10 +224,10 @@ async function fetchDashboardAlerts() {
       div.innerHTML = `
         <i class="fa-solid fa-triangle-exclamation" style="color: ${iconColor}; margin-top: 3px;"></i>
         <div style="flex-grow: 1;">
-          <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">${alert.title}</div>
-          <div style="font-size: 0.75rem; color: var(--text-secondary);">${alert.source} &bull; ${new Date(alert.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+          <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px;">${escapeHtml(alert.title)}</div>
+          <div style="font-size: 0.75rem; color: var(--text-secondary);">${escapeHtml(alert.source)} &bull; ${escapeHtml(new Date(alert.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}))}</div>
         </div>
-        <span class="badge" style="font-size: 0.7rem;">${alert.status}</span>
+        <span class="badge" style="font-size: 0.7rem;">${escapeHtml(alert.status)}</span>
       `;
       container.appendChild(div);
     });
@@ -196,8 +246,8 @@ function addTimelineEvent(data) {
   item.innerHTML = `
     <div class="timeline-dot" style="background-color: var(--gold-gauge);"></div>
     <div class="timeline-content">
-      <h5>${data.run_id} Healed</h5>
-      <p class="subtext">Strategy: ${data.strategy} &bull; Outcome: ${data.outcome}</p>
+      <h5>${escapeHtml(data.run_id)} Healed</h5>
+      <p class="subtext">Strategy: ${escapeHtml(data.strategy)} &bull; Outcome: ${escapeHtml(data.outcome)}</p>
     </div>
   `;
   timeline.prepend(item);
@@ -576,7 +626,7 @@ function showFlashNotification(message, color) {
   toast.style.alignItems = "center";
   toast.style.gap = "0.5rem";
   
-  toast.innerHTML = `<i class="fa-solid fa-circle-info" style="color: ${color}"></i> ${message}`;
+  toast.innerHTML = `<i class="fa-solid fa-circle-info" style="color: ${escapeHtml(color)}"></i> ${escapeHtml(message)}`;
   document.body.appendChild(toast);
 
   setTimeout(() => {
@@ -1186,33 +1236,120 @@ function initPipelineActions() {
 }
 
 
-// G. Settings Form Toggles and Save
+// G. Settings Form Toggles, Load & Persisted Save
 function initSettingsActions() {
-  const saveBtn = document.querySelector(".btn-save-settings");
+  const saveBtn = document.querySelector("#btn-save-platform-settings") || document.querySelector(".btn-save-settings");
+  const settingInputs = document.querySelectorAll("[data-setting]");
   const toggles = document.querySelectorAll(".custom-toggle-btn input");
+  const syncSelects = document.querySelectorAll("[data-setting-sync]");
+  const genTokenBtn = document.querySelector("#btn-generate-api-token");
+
+  const applySettingUi = (key, val) => {
+    const input = document.querySelector(`[data-setting="${key}"]`);
+    if (!input) return;
+    if (input.type === "checkbox") {
+      const enabled = String(val).toLowerCase() === "true";
+      input.checked = enabled;
+      const trackLabel = input.nextElementSibling && input.nextElementSibling.querySelector(".toggle-text-label");
+      if (trackLabel) trackLabel.textContent = enabled ? "ON" : "OFF";
+      const pairedSel = document.querySelector(`[data-setting-sync="${key}"]`);
+      if (pairedSel) {
+        pairedSel.value = enabled ? "Enabled" : "Disabled";
+        pairedSel.classList.toggle("opacity-muted", !enabled);
+      }
+    } else {
+      input.value = val;
+    }
+  };
+
+  if (settingInputs.length > 0) {
+    fetch("/api/settings")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.settings) {
+          Object.entries(data.settings).forEach(([k, v]) => applySettingUi(k, v));
+        }
+      })
+      .catch(() => {});
+  }
 
   if (saveBtn) {
-    saveBtn.addEventListener("click", (e) => {
+    saveBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      showFlashNotification("Saving platform preferences to .planning/config.json...", "var(--gold-gauge)");
-      setTimeout(() => {
-        showFlashNotification("Platform settings updated and configurations synced!", "var(--green-healthy)");
-      }, 1500);
+      const payload = {};
+      document.querySelectorAll("[data-setting]").forEach(el => {
+        const key = el.getAttribute("data-setting");
+        payload[key] = el.type === "checkbox" ? el.checked : el.value;
+      });
+      showFlashNotification("Saving platform settings to database...", "var(--gold-gauge)");
+      try {
+        const res = await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json();
+        if (!res.ok) {
+          showFlashNotification(body.error || "Failed to save settings.", "var(--red-critical)");
+          return;
+        }
+        showFlashNotification("Platform settings saved and synced to database!", "var(--green-healthy)");
+      } catch (_err) {
+        showFlashNotification("Network error while saving settings.", "var(--red-critical)");
+      }
     });
   }
 
   toggles.forEach(toggle => {
     toggle.addEventListener("change", () => {
-      const label = toggle.closest(".settings-control-item").querySelector(".settings-item-main-title").textContent;
+      const item = toggle.closest(".settings-control-item");
+      const label = item ? item.querySelector(".settings-item-main-title").textContent : "Setting";
       const stateText = toggle.checked ? "ON" : "OFF";
-      
-      // Update label text if track label element is found
-      const trackLabel = toggle.nextElementSibling.querySelector(".toggle-text-label");
+      const trackLabel = toggle.nextElementSibling && toggle.nextElementSibling.querySelector(".toggle-text-label");
       if (trackLabel) trackLabel.textContent = stateText;
 
-      showFlashNotification(`Updated: ${label} is now [${stateText}]`, "var(--purple-gauge)");
+      const key = toggle.getAttribute("data-setting");
+      if (key) {
+        const pairedSel = document.querySelector(`[data-setting-sync="${key}"]`);
+        if (pairedSel) {
+          pairedSel.value = toggle.checked ? "Enabled" : "Disabled";
+          pairedSel.classList.toggle("opacity-muted", !toggle.checked);
+        }
+      }
+      showFlashNotification(`Updated: ${label} is now [${stateText}] (click Save Changes to persist)`, "var(--purple-gauge)");
     });
   });
+
+  syncSelects.forEach(sel => {
+    sel.addEventListener("change", () => {
+      const key = sel.getAttribute("data-setting-sync");
+      const enabled = sel.value === "Enabled";
+      sel.classList.toggle("opacity-muted", !enabled);
+      applySettingUi(key, enabled);
+    });
+  });
+
+  if (genTokenBtn) {
+    genTokenBtn.addEventListener("click", async () => {
+      try {
+        const res = await fetch("/api/auth/token", { method: "POST" });
+        const data = await res.json();
+        if (!res.ok) {
+          showFlashNotification(data.error || "Could not generate token.", "var(--red-critical)");
+          return;
+        }
+        const outRow = document.querySelector("#api-token-output-row");
+        const outCode = document.querySelector("#api-token-output");
+        if (outRow && outCode) {
+          outRow.style.display = "flex";
+          outCode.textContent = data.header_example;
+        }
+        showFlashNotification("New Bearer API token generated! Copy it now; it is hashed at rest.", "var(--green-healthy)");
+      } catch (_err) {
+        showFlashNotification("Network error generating API token.", "var(--red-critical)");
+      }
+    });
+  }
 }
 
 // -------------------------------------------------------------
@@ -1301,10 +1438,10 @@ function initGlobalButtonActions() {
       menu.innerHTML = `
         <div style="padding: 0.5rem 1.25rem; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Workspace: Production</div>
         <div class="profile-menu-item" onclick="window.location.href='/settings'"><i class="fa-solid fa-user-gear"></i> Account & Settings</div>
-        <div class="profile-menu-item" onclick="showFlashNotification('API Key: ctx_live_99482701a... copied to clipboard!', 'var(--teal-graph)')"><i class="fa-solid fa-key"></i> Copy API Key</div>
-        <div class="profile-menu-item" onclick="showFlashNotification('Switched to Staging Environment scope', 'var(--purple-gauge)')"><i class="fa-solid fa-layer-group"></i> Switch Environment</div>
+        <div class="profile-menu-item" onclick="window.location.href='/settings#btn-generate-api-token'"><i class="fa-solid fa-key"></i> Generate API Token</div>
+        <div class="profile-menu-item" onclick="showFlashNotification('Environment scope managed in Settings', 'var(--purple-gauge)')"><i class="fa-solid fa-layer-group"></i> Environment Settings</div>
         <div class="profile-menu-divider"></div>
-        <div class="profile-menu-item" style="color: var(--red-failed);" onclick="window.location.href='/logout'"><i class="fa-solid fa-right-from-bracket"></i> Log Out</div>
+        <div class="profile-menu-item" style="color: var(--red-failed);" onclick="submitLogoutPost()"><i class="fa-solid fa-right-from-bracket"></i> Log Out</div>
       `;
       document.body.appendChild(menu);
 

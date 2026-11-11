@@ -28,15 +28,17 @@ VALID_JENKINS_RESULTS = {"SUCCESS", "FAILURE", "ABORTED", "UNSTABLE"}
 VALID_ALERT_STATUSES = {
     "Active", "Acknowledged", "Silenced", "Resolved", "Archived"
 }
+VALID_SBOM_FORMATS = {"spdx-json", "cyclonedx-json", "syft-json"}
 
 # ── Compiled patterns ──────────────────────────────────────────────
 
 _REPO_RE      = re.compile(r'^[\w\-./]{1,120}$')
 _BRANCH_RE    = re.compile(r'^[\w\-./]{1,80}$')
 _DEP_NAME_RE  = re.compile(r'^[\w\-]{1,80}$')
-_IMAGE_RE     = re.compile(r'^[\w\-./: @]{1,200}$')
+_IMAGE_RE     = re.compile(r'^[a-zA-Z0-9][\w\-./:@]{0,199}$')
 _NAMESPACE_RE = re.compile(r'^[\w\-]{1,63}$')
 _RUN_ID_RE    = re.compile(r'^[\w\-]{1,40}$')
+_K8S_ID_RE    = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9\-_.]{0,62}$')
 
 
 # ── Primitive validators ───────────────────────────────────────────
@@ -230,3 +232,62 @@ def validate_webhook_jenkins(data: dict) -> tuple[dict, list[str]]:
         "job_name":     str(data.get("job_name", ""))[:120],
         "console_log":  str(data.get("console_log", ""))[:5_000],
     }, errors
+
+
+def validate_sbom_format(fmt: str | None) -> tuple[str, str | None]:
+    """Validate Syft SBOM output format against strict allowlist."""
+    val = (fmt or "spdx-json").strip()
+    if val not in VALID_SBOM_FORMATS:
+        return val, f"'format' must be one of {sorted(VALID_SBOM_FORMATS)}"
+    return val, None
+
+
+def validate_cosign_public_key(public_key: str | None) -> tuple[str | None, str | None]:
+    """Reject CLI option flags, whitespace, or path traversal in Cosign public key."""
+    if not public_key:
+        return None, None
+    key = str(public_key).strip()
+    if not key:
+        return None, None
+    if key.startswith("-") or any(c.isspace() for c in key) or ".." in key:
+        return None, "'public_key' contains disallowed characters or path traversal"
+    if not (key.startswith("https://") or key.startswith("k8s://") or re.match(r'^[\w\-./]{1,200}$', key)):
+        return None, "'public_key' must be an https:// URL, k8s:// ref, or relative key path"
+    return key, None
+
+
+def sanitize_k8s_identifier(value: str | None, default: str) -> str:
+    """Return value if it is a safe Kubernetes identifier, otherwise default."""
+    if not value:
+        return default
+    cleaned = str(value).strip()[:63]
+    return cleaned if _K8S_ID_RE.match(cleaned) else default
+
+
+def validate_service_url(url: str | None, field: str) -> tuple[str, str | None]:
+    """Validate external integration URLs against SSRF / metadata endpoints."""
+    import ipaddress
+    from urllib.parse import urlparse
+
+    raw = str(url or "").strip()
+    if not raw or len(raw) > 250:
+        return "", f"'{field}' must be a non-empty URL under 250 characters."
+
+    parsed = urlparse(raw)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return "", f"'{field}' must be a valid http(s) URL."
+    if parsed.username or parsed.password:
+        return "", f"'{field}' must not embed credentials in URL."
+
+    host = parsed.hostname.lower().rstrip(".")
+    if host in ("metadata.google.internal", "metadata", "0.0.0.0"):
+        return "", f"'{field}' points to a disallowed internal host."
+
+    try:
+        ip_obj = ipaddress.ip_address(host)
+        if ip_obj.is_link_local or ip_obj.is_unspecified or ip_obj.is_multicast:
+            return "", f"'{field}' points to a disallowed link-local or unspecified IP."
+    except ValueError:
+        pass  # DNS hostname — allowed (e.g. jenkins, prometheus, jenkins.company.internal)
+
+    return raw.rstrip("/"), None

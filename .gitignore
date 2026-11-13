@@ -7,6 +7,11 @@ __pycache__/
 *.log
 *.db
 *.sqlite
+.cortex_init.lock
+.coverage
+.pytest_cache/
+reports/generated/*.pdf
+reports/generated/*.json
 
 # Hidden tool directories
 .*

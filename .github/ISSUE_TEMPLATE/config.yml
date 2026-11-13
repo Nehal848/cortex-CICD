@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: CortexCICD Documentation
+    url: https://github.com/Nehal848/cortex-CICD/blob/main/docs/COMPLETE_PROJECT_DOCUMENTATION.md
+    about: Read full architecture, API endpoints, and deployment guides.
+  - name: Security Vulnerability Reporting
+    url: https://github.com/Nehal848/cortex-CICD/blob/main/.github/SECURITY.md
+    about: Read our security policy and report sensitive vulnerabilities privately.

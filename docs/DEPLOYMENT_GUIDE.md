@@ -85,7 +85,9 @@ docker compose up -d --build
 docker compose ps
 ```
 Services exposed:
+- **Nginx Reverse Proxy Gateway:** `http://localhost:80` (production-grade unbuffered SSE + rate limiting)
 - **Cortex API & Web UI:** `http://localhost:5000`
+- **Cortex Worker Metrics:** `http://localhost:9101`
 - **Prometheus UI:** `http://localhost:9090`
 - **Grafana UI:** `http://localhost:3000` (Default credentials: `admin` / `admin`)
 
@@ -95,17 +97,26 @@ Services exposed:
 
 Production Kubernetes manifests are located in `kubernetes/`:
 
-### 1. Configure RBAC Permissions for the Self-Healing Engine
+### 1. Configure Cluster Secrets
+Copy and populate secrets from the template:
+```bash
+cp kubernetes/secret.yaml.example kubernetes/secret.yaml
+# Edit kubernetes/secret.yaml with strong production credentials
+kubectl apply -f kubernetes/secret.yaml
+```
+
+### 2. Configure RBAC Permissions for the Self-Healing Engine
 The self-healing engine requires Kubernetes RBAC permissions to inspect and delete pods, roll back deployments, and adjust replica counts:
 ```bash
 kubectl apply -f kubernetes/healing-rbac.yaml
 ```
 *`healing-rbac.yaml` defines a `ServiceAccount` (`cortex-healing-sa`), `ClusterRole`, and `ClusterRoleBinding` granting access to `pods`, `deployments`, `replicasets`, and `events`.*
 
-### 2. Deploy Cortex Application & Service
+### 3. Deploy Cortex Workloads, Service & Ingress
 ```bash
 kubectl apply -f kubernetes/deployment.yaml
 kubectl apply -f kubernetes/service.yaml
+kubectl apply -f kubernetes/ingress.yaml
 ```
 
 ### 3. Verify Pod & Health Probes

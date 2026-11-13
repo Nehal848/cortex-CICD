@@ -45,3 +45,4 @@ jobs:
       - name: Smoke Check WSGI Boot & Health Endpoints
         run: |
           python -c "import wsgi; c = wsgi.app.test_client(); assert c.get('/healthz').status_code == 200; assert c.get('/livez').status_code == 200; print('WSGI health check passed!')"
+

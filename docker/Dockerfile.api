@@ -4,7 +4,13 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create dedicated non-root service account
+RUN groupadd -r cortex && useradd -r -g cortex -d /app -s /sbin/nologin cortex
+
 COPY . .
+RUN chown -R cortex:cortex /app
+
+USER cortex
 
 # Cortex API runs on 5000 via multi-threaded Gunicorn (supports persistent SSE streams)
 EXPOSE 5000

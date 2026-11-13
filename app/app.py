@@ -97,6 +97,33 @@ def create_app(test_config: dict | None = None, enable_background: bool = True):
     def _inject_security_context():
         return {"csrf_token": get_csrf_token}
 
+    # ── HTTP security headers ──────────────────────────────────────
+    @app.after_request
+    def _add_security_headers(response):
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("X-XSS-Protection", "1; mode=block")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        if app.config.get("SESSION_COOKIE_SECURE"):
+            response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+        return response
+
+    # ── Reverse proxy middleware (ProxyFix) ────────────────────────
+    trusted_proxies = app.config.get("TRUSTED_PROXY_COUNT", 0)
+    if trusted_proxies > 0:
+        try:
+            from werkzeug.middleware.proxy_fix import ProxyFix
+            app.wsgi_app = ProxyFix(
+                app.wsgi_app,
+                x_for=trusted_proxies,
+                x_proto=trusted_proxies,
+                x_host=trusted_proxies,
+                x_port=trusted_proxies,
+                x_prefix=trusted_proxies,
+            )
+        except Exception as exc:
+            app.logger.warning("[Security] ProxyFix failed to load: %s", exc)
+
     # ── Prometheus observability (/metrics & HTTP counters) ─────────
     try:
         from .observability import init_observability

@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: cortex-api
   namespace: cortex-system
+  labels:
+    app: cortex-api
 spec:
   replicas: 3
   selector:
@@ -13,11 +15,19 @@ spec:
       labels:
         app: cortex-api
     spec:
+      securityContext:
+        runAsNonRoot: true
       containers:
       - name: cortex-api
         image: cortex/api:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000
+          name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
         resources:
           limits:
             memory: "512Mi"
@@ -38,18 +48,32 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 10
         env:
+        - name: FLASK_ENV
+          value: "production"
         - name: DISABLE_EMBEDDED_WORKER
           value: "true"
-        - name: REDIS_URL
-          value: "redis://redis-svc:6379/0"
+        - name: TRUSTED_PROXY_COUNT
+          value: "1"
+        - name: SESSION_COOKIE_SECURE
+          value: "true"
+        - name: ENFORCE_CSRF
+          value: "true"
+        - name: STRICT_WEBHOOK_VERIFICATION
+          value: "true"
+        envFrom:
+        - secretRef:
+            name: cortex-secrets
+            optional: true
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: cortex-worker
   namespace: cortex-system
+  labels:
+    app: cortex-worker
 spec:
-  replicas: 5 # Heavy lifting done by agents
+  replicas: 3
   selector:
     matchLabels:
       app: cortex-worker
@@ -59,9 +83,30 @@ spec:
         app: cortex-worker
     spec:
       serviceAccountName: cortex-healer-sa
+      securityContext:
+        runAsNonRoot: true
       containers:
       - name: cortex-worker
         image: cortex/worker:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9101
+          name: metrics
+        securityContext:
+          allowPrivilegeEscalation: false
+        resources:
+          limits:
+            memory: "768Mi"
+            cpu: "750m"
+          requests:
+            memory: "384Mi"
+            cpu: "300m"
         env:
-        - name: REDIS_URL
-          value: "redis://redis-svc:6379/0"
+        - name: FLASK_ENV
+          value: "production"
+        - name: WORKER_METRICS_PORT
+          value: "9101"
+        envFrom:
+        - secretRef:
+            name: cortex-secrets
+            optional: true

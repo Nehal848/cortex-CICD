@@ -7,7 +7,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Workers need docker CLI to spin up sandbox environments for testing patches
 RUN apt-get update && apt-get install -y docker.io git && rm -rf /var/lib/apt/lists/*
 
+# Create dedicated non-root service account with docker group access
+RUN groupadd -r cortex && useradd -r -g cortex -G docker -d /app -s /sbin/nologin cortex
+
 COPY . .
+RUN chown -R cortex:cortex /app
+
+USER cortex
 
 # Start the Celery or RQ worker
 CMD ["python", "worker.py"]

@@ -461,3 +461,21 @@ def test_ml_hmac_verification_and_worker_alert_dedup(app):
     assert len(first) == 2
     assert len(second) == 0
     assert Alert.query.filter(Alert.status == "Active", Alert.title.like("High CPU Usage%")).count() >= 1
+
+
+def test_http_security_headers_and_proxyfix(anon_client, app):
+    # Standard responses contain hardening headers
+    resp = anon_client.get("/healthz")
+    assert resp.status_code == 200
+    assert resp.headers.get("X-Content-Type-Options") == "nosniff"
+    assert resp.headers.get("X-Frame-Options") == "DENY"
+    assert resp.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+
+    # When SESSION_COOKIE_SECURE is true, HSTS header is added
+    old_sec = app.config.get("SESSION_COOKIE_SECURE")
+    app.config["SESSION_COOKIE_SECURE"] = True
+    try:
+        sec_resp = anon_client.get("/healthz")
+        assert "Strict-Transport-Security" in sec_resp.headers
+    finally:
+        app.config["SESSION_COOKIE_SECURE"] = old_sec

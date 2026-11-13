@@ -21,3 +21,4 @@ We take the security of **CortexCICD** seriously. If you discover a security vul
 - **Production Mode:** Always run with `FLASK_ENV=production`, a random `SECRET_KEY` of at least 32 characters, and `SESSION_COOKIE_SECURE=true` behind a TLS-terminating reverse proxy.
 - **Webhook Hardening:** Set `STRICT_WEBHOOK_VERIFICATION=true`, `GITHUB_WEBHOOK_SECRET`, `JENKINS_WEBHOOK_SECRET`, and `ALERTMANAGER_TOKEN` so all inbound webhooks fail closed without valid tokens.
 - **Trusted Execution Environment (TEE):** In standard development and testing, TEE runs in `TEE_MODE=simulated` using software AES-256-GCM authenticated encryption. For hardware enclave guarantees, deploy inside AWS Nitro Enclaves, Intel SGX, or AMD SEV confidential VM environments.
+

@@ -39,3 +39,4 @@ jobs:
           file: docker/Dockerfile.worker
           push: false
           tags: cortex/worker:test
+

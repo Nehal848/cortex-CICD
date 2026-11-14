@@ -13,6 +13,10 @@ __pycache__/
 reports/generated/*.pdf
 reports/generated/*.json
 
+# ML model artifacts — generated at runtime; not tracked in git
+ml/models/*.pkl
+ml/models/*.pkl.sig
+
 # Hidden tool directories
 .*
 !.gitignore

@@ -33,7 +33,10 @@ services:
       - ALERTMANAGER_TOKEN=${ALERTMANAGER_TOKEN:-}
       - CORTEX_ENCLAVE_MASTER_KEY=${CORTEX_ENCLAVE_MASTER_KEY:-}
       - ENFORCE_CSRF=${ENFORCE_CSRF:-true}
+      # Set STRICT_WEBHOOK_VERIFICATION=true in production when secrets are configured
       - STRICT_WEBHOOK_VERIFICATION=${STRICT_WEBHOOK_VERIFICATION:-false}
+      # Set SESSION_COOKIE_SECURE=true in production (requires HTTPS)
+      - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-false}
       - TRUSTED_PROXY_COUNT=${TRUSTED_PROXY_COUNT:-1}
       - DATABASE_URL=postgresql://cortex:cortex@postgres:5432/cortex
       - REDIS_URL=redis://redis:6379/0

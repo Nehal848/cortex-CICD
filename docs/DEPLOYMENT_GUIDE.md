@@ -193,4 +193,67 @@ post {
 | `GITHUB_WEBHOOK_SECRET` | `""` | Secret key for validating GitHub webhook HMAC signatures. |
 | `SLACK_WEBHOOK_URL` | `""` | Incoming Slack webhook for escalation notifications. |
 | `SMTP_SERVER` | `""` | Outbound SMTP relay server hostname. |
+| `STRICT_WEBHOOK_VERIFICATION` | `false` | Set `true` in production to reject webhooks with no/invalid HMAC. |
+| `SESSION_COOKIE_SECURE` | `false` | Set `true` in production when served over HTTPS. |
+| `ENFORCE_CSRF` | `true` | Reject state-changing requests without a valid CSRF token. |
+| `TRUSTED_PROXY_COUNT` | `0` | Number of trusted reverse-proxy hops (Nginx adds 1). |
+| `CORTEX_ENCLAVE_MASTER_KEY` | `""` | 32-byte hex key for HMAC-signing ML model bundles. Falls back to `SECRET_KEY`. |
+| `TRIVY_PATH` | `trivy` | Path to the Trivy binary (enables real vulnerability scans). |
+| `COSIGN_PATH` | `cosign` | Path to the Cosign binary (enables real image signature verification). |
+| `SYFT_PATH` | `syft` | Path to the Syft binary (enables real SBOM generation). |
+
+---
+
+## 8. Kubernetes Autoscaling
+
+Apply the HPA manifest after deploying the core manifests:
+```bash
+kubectl apply -f kubernetes/hpa.yaml
+```
+
+The `cortex-api` HPA scales between **2 and 10 replicas** targeting 70% CPU / 80% memory.
+The `cortex-worker` HPA scales between **1 and 5 replicas** targeting 70% CPU.
+
+> **Prerequisite:** The Kubernetes [Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
+> must be installed in the cluster (`kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml`).
+
+---
+
+## 9. Publishing Docker Images
+
+Tag a release to automatically publish images to GHCR via the `publish.yml` workflow:
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+Images are published to:
+```
+ghcr.io/<owner>/cortex-cicd-api:<version>
+ghcr.io/<owner>/cortex-cicd-worker:<version>
+```
+
+Pull in Kubernetes by updating `kubernetes/deployment.yaml` `image:` fields accordingly.
+
+---
+
+## 10. Security CLIs (Trivy · Cosign · Syft)
+
+The Docker images install these binaries automatically at build time.
+For bare-metal deployments, install them manually:
+
+```bash
+# Trivy
+curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+# Cosign
+COSIGN_VERSION="v2.4.1"
+curl -sSfL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" \
+    -o /usr/local/bin/cosign && chmod +x /usr/local/bin/cosign
+
+# Syft
+curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+```
+
+Without these binaries, the `/api/security/*` endpoints return clearly-labelled mock results.
 

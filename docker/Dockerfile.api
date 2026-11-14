@@ -4,6 +4,27 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# ---------------------------------------------------------------------------
+# Optional security scanning CLIs — enables real scans instead of mock mode.
+# Set TRIVY_PATH / COSIGN_PATH / SYFT_PATH env vars if installed elsewhere.
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        wget \
+        curl \
+        ca-certificates \
+    && \
+    # Trivy (vulnerability scanner)
+    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+        | sh -s -- -b /usr/local/bin v0.57.0 && \
+    # Cosign (image signing verifier)
+    COSIGN_VERSION="v2.4.1" && \
+    curl -sSfL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" \
+        -o /usr/local/bin/cosign && chmod +x /usr/local/bin/cosign && \
+    # Syft (SBOM generator)
+    curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+        | sh -s -- -b /usr/local/bin v1.14.0 && \
+    rm -rf /var/lib/apt/lists/*
+
 # Create dedicated non-root service account
 RUN groupadd -r cortex && useradd -r -g cortex -d /app -s /sbin/nologin cortex
 
@@ -15,4 +36,6 @@ USER cortex
 # Cortex API runs on 5000 via multi-threaded Gunicorn (supports persistent SSE streams)
 EXPOSE 5000
 
-CMD ["gunicorn", "--worker-class", "gthread", "--threads", "4", "--workers", "2", "--timeout", "120", "-b", "0.0.0.0:5000", "wsgi:application"]
+# entrypoint.py trains the ML model on first boot if the .pkl is missing,
+# then execs Gunicorn — signals pass through cleanly.
+CMD ["python", "entrypoint.py"]

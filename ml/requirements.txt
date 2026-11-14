@@ -1,4 +1,8 @@
-scikit-learn==1.3.0
-numpy==1.25.2
-pandas==2.0.3
-torch==2.0.1
+# ML dependencies — kept in sync with root requirements.txt
+# torch was removed: it was listed here but never imported anywhere in the codebase.
+# Pin compatible lower bounds so pip resolves correctly with the main app.
+scikit-learn>=1.5.0
+numpy>=1.26.0
+pandas>=2.0.0
+joblib>=1.3.0
+scipy>=1.11.0

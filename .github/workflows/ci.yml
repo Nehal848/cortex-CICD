@@ -39,10 +39,14 @@ jobs:
           FLASK_ENV: testing
           SECRET_KEY: ci-test-secret-key-32-bytes-long
           ADMIN_PASSWORD: ci-admin-password
+          DATABASE_URL: ""
+          REDIS_URL: ""
         run: |
           python tests/run_tests.py
 
       - name: Smoke Check WSGI Boot & Health Endpoints
+        env:
+          SECRET_KEY: ci-test-secret-key-32-bytes-long
+          ADMIN_PASSWORD: ci-admin-password
         run: |
           python -c "import wsgi; c = wsgi.app.test_client(); assert c.get('/healthz').status_code == 200; assert c.get('/livez').status_code == 200; print('WSGI health check passed!')"
-

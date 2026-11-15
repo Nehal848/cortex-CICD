@@ -127,3 +127,97 @@ def manage_api_token():
         "expires_at": expires_at.isoformat() + "Z",
         "header_example": f"Authorization: Bearer {raw_token}",
     }), 200
+
+
+@settings_api_bp.route("/users", methods=["GET", "POST"])
+def manage_users():
+    """List all users (GET) or create a new user (POST). Admin only."""
+    auth = _auth()
+    if auth:
+        return auth
+
+    from app.auth_guard import require_role
+    from app.db import db
+    from app.models import User
+    from werkzeug.security import generate_password_hash
+
+    current_role = User.get_role(session.get("username") or getattr(g, "api_user", "admin"))
+    if current_role != "admin":
+        return jsonify({"error": "Admin role required to manage users."}), 403
+
+    if request.method == "GET":
+        users = User.query.order_by(User.id.asc()).all()
+        return jsonify({
+            "users": [
+                {
+                    "id": u.id,
+                    "username": u.username,
+                    "role": u.role,
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                    "has_api_token": bool(u.api_token_hash),
+                    "token_expires_at": u.api_token_expires_at.isoformat() if u.api_token_expires_at else None,
+                }
+                for u in users
+            ]
+        }), 200
+
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    password = (data.get("password") or "").strip()
+    role = (data.get("role") or "viewer").strip().lower()
+
+    if not username or len(username) < 3:
+        return jsonify({"error": "Username must be at least 3 characters."}), 400
+    if not password or len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters."}), 400
+    if role not in ("admin", "operator", "viewer"):
+        return jsonify({"error": "Role must be one of: admin, operator, viewer."}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({"error": f"User '{username}' already exists."}), 409
+
+    new_user = User(
+        username=username,
+        password_hash=generate_password_hash(password),
+        role=role,
+    )
+    db.session.add(new_user)
+    db.session.commit()
+
+    return jsonify({
+        "status": "created",
+        "username": new_user.username,
+        "role": new_user.role,
+    }), 201
+
+
+@settings_api_bp.route("/users/<username>", methods=["DELETE"])
+def delete_user(username: str):
+    """Delete a user account. Admin only."""
+    auth = _auth()
+    if auth:
+        return auth
+
+    from app.db import db
+    from app.models import User
+
+    caller_username = session.get("username") or getattr(g, "api_user", "admin")
+    if User.get_role(caller_username) != "admin":
+        return jsonify({"error": "Admin role required to delete users."}), 403
+
+    if caller_username == username:
+        return jsonify({"error": "Cannot delete your own active account."}), 400
+
+    target = User.query.filter_by(username=username).first()
+    if not target:
+        return jsonify({"error": f"User '{username}' not found."}), 404
+
+    if target.role == "admin":
+        admin_count = User.query.filter_by(role="admin").count()
+        if admin_count <= 1:
+            return jsonify({"error": "Cannot delete the sole administrator account."}), 400
+
+    db.session.delete(target)
+    db.session.commit()
+    return jsonify({"status": "deleted", "username": username}), 200
+

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cortex-system
+  labels:
+    app.kubernetes.io/name: cortex-cicd
+    app.kubernetes.io/part-of: cortex-system

@@ -78,3 +78,32 @@ def test_api_security_cosign_verify(client):
     data = response.get_json()
     assert data["verified"] is True
     assert data["status"] == "VALID"
+
+
+def test_api_list_users(client):
+    """Verify listing users via API."""
+    response = client.get("/api/users")
+    assert response.status_code == 200
+    data = response.get_json()
+    assert "users" in data
+    assert isinstance(data["users"], list)
+
+
+def test_api_create_and_delete_user(client):
+    """Verify creating and deleting a user via API."""
+    # Create user
+    payload = {"username": "testdev", "password": "password123", "role": "operator"}
+    res = client.post("/api/users", json=payload)
+    assert res.status_code == 201
+    assert res.get_json()["username"] == "testdev"
+
+    # Verify user exists in list
+    list_res = client.get("/api/users")
+    usernames = [u["username"] for u in list_res.get_json()["users"]]
+    assert "testdev" in usernames
+
+    # Delete user
+    del_res = client.delete("/api/users/testdev")
+    assert del_res.status_code == 200
+    assert del_res.get_json()["status"] == "deleted"
+

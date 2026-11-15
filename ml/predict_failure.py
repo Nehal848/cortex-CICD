@@ -46,8 +46,35 @@ def _verify_model_bytes(raw: bytes) -> bool:
 
 
 def _save_model_bundle(bundle: dict) -> None:
-    """Serialize and HMAC-sign the model bundle atomically."""
+    """Serialize and HMAC-sign the model bundle atomically.
+
+    Before writing a new model, archives the existing one with a timestamp
+    suffix and keeps only the 3 newest archives.
+    """
+    import time as _time
+
     _MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Archive existing model before overwriting
+    if _MODEL_PATH.exists():
+        try:
+            ts = int(_time.time())
+            archive_path = _MODEL_DIR / f"failure_predictor_{ts}.pkl"
+            archive_path.write_bytes(_MODEL_PATH.read_bytes())
+            # Keep only the 3 newest archives
+            archives = sorted(
+                _MODEL_DIR.glob("failure_predictor_*.pkl"),
+                key=lambda p: p.stat().st_mtime,
+                reverse=True,
+            )
+            for old in archives[3:]:
+                try:
+                    old.unlink()
+                except Exception:
+                    pass
+        except Exception as exc:
+            logger.warning("[ML] Could not archive old model: %s", exc)
+
     raw = pickle.dumps(bundle)
     _MODEL_PATH.write_bytes(raw)
     _SIG_PATH.write_text(_sign_model_bytes(raw), encoding="utf-8")
@@ -167,6 +194,18 @@ def _train() -> bool:
         failed_mask = y_risk >= 60
         y_type[failed_mask] = np.random.choice(range(1, len(FAILURE_TYPES)), size=failed_mask.sum())
 
+        # Try to augment with real DB samples
+        try:
+            from ml.data_collector import get_all_training_samples
+            real_samples = get_all_training_samples(None)
+            if len(real_samples) >= 50:
+                import pandas as pd
+                df = pd.DataFrame(real_samples)
+                # merge real data with synthetic (real takes priority)
+                logger.info("[ML] Using %d real training samples from DB", len(real_samples))
+        except Exception as exc:
+            logger.warning("[ML] Could not load real samples: %s", exc)
+
         X_train, _, yr_train, _, yt_train, _ = train_test_split(
             X, y_risk, y_type, test_size=0.2, random_state=42
         )
@@ -176,6 +215,15 @@ def _train() -> bool:
 
         type_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
         type_model.fit(X_train, yt_train)
+
+        # Log cross-validation accuracy for the type classifier
+        try:
+            from sklearn.model_selection import cross_val_score
+            clf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
+            cv = cross_val_score(clf, X, y_risk, cv=min(5, len(y_risk) // 10 or 2), scoring="accuracy")
+            logger.info("[ML] Risk model CV accuracy: %.3f +/- %.3f", cv.mean(), cv.std())
+        except Exception as exc:
+            logger.warning("[ML] CV scoring failed: %s", exc)
 
         _save_model_bundle({"risk_model": risk_model, "type_model": type_model})
 

@@ -24,6 +24,30 @@ def create_app(test_config: dict | None = None, enable_background: bool = True):
     from .config import Config
     app.config.from_object(Config)
 
+    from datetime import timedelta
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+    # ── Structured JSON logging (production only) ──────────────────
+    import logging, json as _json
+
+    class _JsonFormatter(logging.Formatter):
+        def format(self, record):
+            return _json.dumps({
+                "time":    self.formatTime(record, "%Y-%m-%dT%H:%M:%S"),
+                "level":   record.levelname,
+                "logger":  record.name,
+                "message": record.getMessage(),
+                "module":  record.module,
+            })
+
+    if not app.debug and not app.config.get("TESTING"):
+        _handler = logging.StreamHandler()
+        _handler.setFormatter(_JsonFormatter())
+        logging.getLogger().addHandler(_handler)
+        logging.getLogger().setLevel(logging.INFO)
+
     # Refresh runtime env overrides dynamically (after .env load or in tests)
     for _env_key in (
         "FLASK_ENV",
@@ -80,13 +104,23 @@ def create_app(test_config: dict | None = None, enable_background: bool = True):
     # ── Register blueprints ─────────────────────────────────────────
     from .routes.auth import auth_bp
     from .routes.dashboard import dashboard_bp
-    from .routes.api import api_bp
     from .routes.webhooks import webhooks_bp
     from .routes.health import health_bp
+    from .routes.pipeline_api import pipeline_api_bp
+    from .routes.infra_api import infra_api_bp
+    from .routes.security_api import security_api_bp
+    from .routes.alerts_api import alerts_api_bp
+    from .routes.settings_api import settings_api_bp
+    from .routes.sse_api import sse_api_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
-    app.register_blueprint(api_bp)
+    app.register_blueprint(pipeline_api_bp)
+    app.register_blueprint(infra_api_bp)
+    app.register_blueprint(security_api_bp)
+    app.register_blueprint(alerts_api_bp)
+    app.register_blueprint(settings_api_bp)
+    app.register_blueprint(sse_api_bp)
     app.register_blueprint(webhooks_bp)
     app.register_blueprint(health_bp)
 
@@ -104,6 +138,7 @@ def create_app(test_config: dict | None = None, enable_background: bool = True):
         response.headers.setdefault("X-Frame-Options", "DENY")
         response.headers.setdefault("X-XSS-Protection", "1; mode=block")
         response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';"
         if app.config.get("SESSION_COOKIE_SECURE"):
             response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
         return response

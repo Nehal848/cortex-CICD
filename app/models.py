@@ -133,6 +133,14 @@ class User(db.Model):
     api_token_expires_at = db.Column(db.DateTime, nullable=True)
     created_at           = db.Column(db.DateTime, default=datetime.utcnow)
 
+    @classmethod
+    def get_role(cls, username: str) -> str:
+        try:
+            user = cls.query.filter_by(username=username).first()
+            return user.role if user else "viewer"
+        except Exception:
+            return "viewer"
+
 
 class PlatformSetting(db.Model):
     """Persisted key-value platform configuration editable from /settings."""

@@ -1,0 +1,19 @@
+# Production override — use with:
+# docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+version: "3.8"
+services:
+  cortex-api:
+    volumes: []
+    environment:
+      - SESSION_COOKIE_SECURE=true
+      - STRICT_WEBHOOK_VERIFICATION=true
+      - FLASK_ENV=production
+
+  cortex-worker:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  nginx:
+    ports:
+      - "80:80"
+      - "443:443"

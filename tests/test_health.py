@@ -48,3 +48,12 @@ def test_livez_uptime_is_positive_integer(client):
     d = json.loads(r.data)
     assert isinstance(d["uptime_secs"], int)
     assert d["uptime_secs"] >= 0
+
+
+def test_ready_k8s_probe_200(client):
+    r = client.get("/ready")
+    assert r.status_code == 200
+    d = json.loads(r.data)
+    assert d["status"] == "ready"
+    assert d["db"] == "ok"
+

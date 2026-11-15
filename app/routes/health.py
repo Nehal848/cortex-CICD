@@ -89,6 +89,19 @@ def readyz():
     }), http_status
 
 
+# ── /ready — Readiness Probe ───────────────────────────────────────
+
+@health_bp.route("/ready")
+def readiness():
+    from sqlalchemy import text
+    from app.db import db
+    try:
+        db.session.execute(text("SELECT 1"))
+        return jsonify({"status": "ready", "db": "ok"}), 200
+    except Exception as e:
+        return jsonify({"status": "not ready", "db": str(e)}), 503
+
+
 # ── /livez — Detailed Component Status ────────────────────────────
 
 @health_bp.route("/livez")

@@ -1,5 +1,10 @@
 # Cortex CI/CD — Self-Healing Pipeline 🧠
 
+![CI](https://github.com/Nehal848/cortex-CICD/actions/workflows/ci.yml/badge.svg)
+![Docker Build](https://github.com/Nehal848/cortex-CICD/actions/workflows/docker-build.yml/badge.svg)
+![License](https://img.shields.io/github/license/Nehal848/cortex-CICD)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)
+
 <div align="center">
   <h3>Deploy without fear. We heal the rest.</h3>
   <p>Cortex intercepts CI/CD failures in real-time, diagnoses root causes with ML, and autonomously recovers before you even notice.</p>

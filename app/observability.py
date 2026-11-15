@@ -44,9 +44,25 @@ try:
         "cortex_sse_subscribers",
         "Active SSE subscriber connections",
     )
+    try:
+        ML_MODEL_ACCURACY = Gauge(
+            "cortex_ml_model_accuracy",
+            "Last cross-validation accuracy of the failure prediction model",
+        )
+    except Exception:
+        pass
     _PROMETHEUS_AVAILABLE = True
 except ImportError:  # pragma: no cover — fallback if prometheus_client omitted
     _PROMETHEUS_AVAILABLE = False
+
+
+def set_ml_accuracy(score: float) -> None:
+    """Update the ML model accuracy Prometheus gauge."""
+    if _PROMETHEUS_AVAILABLE:
+        try:
+            ML_MODEL_ACCURACY.set(score)
+        except Exception:
+            pass
 
 
 def record_pipeline_event(status: str, triggered_by: str) -> None:

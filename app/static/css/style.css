@@ -5709,13 +5709,13 @@ body.elegant-body {
 
 /* Aurora Background Effect */
 .aurora-bg {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
 }
 
@@ -5725,6 +5725,7 @@ body.elegant-body {
   filter: blur(120px);
   opacity: 0.5;
   animation: float 20s infinite ease-in-out alternate;
+  z-index: 0;
 }
 
 .blob-1 {
@@ -5750,13 +5751,13 @@ body.elegant-body {
 }
 
 /* Floating Tech Icons */
-/* Floating Tech Icons */
 .floating-tech-icon {
   position: absolute;
   font-size: 4rem;
-  z-index: -1;
+  z-index: 1;
   animation: tech-float 25s infinite ease-in-out alternate;
-  opacity: 0.6;
+  opacity: 0.65;
+  pointer-events: none;
 }
 
 @keyframes tech-float {

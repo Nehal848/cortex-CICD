@@ -2,7 +2,7 @@ import os
 
 from flask import Blueprint, jsonify, request
 
-from app.auth_guard import _auth
+from app.auth_guard import _auth, check_role
 
 security_api_bp = Blueprint('security_api', __name__, url_prefix="/api")
 
@@ -37,6 +37,9 @@ def tee_seal():
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("admin")
+    if role_err:
+        return role_err
     try:
         data = request.json or {}
         if not data.get("key") or not data.get("value"):
@@ -65,6 +68,9 @@ def security_scan():
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.validation import validate_security_scan
         cleaned, errors = validate_security_scan(request.json or {})
@@ -98,6 +104,9 @@ def security_sbom():
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.validation import validate_security_scan, validate_sbom_format
         body = request.json or {}
@@ -119,6 +128,9 @@ def security_cosign_verify():
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.validation import validate_security_scan, validate_cosign_public_key
         body = request.json or {}

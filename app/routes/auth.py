@@ -13,9 +13,9 @@ from app.http_security import (
 auth_bp = Blueprint('auth', __name__)
 
 
-def _verify_credentials(username: str, password: str) -> bool:
+def _verify_credentials(username: str, password: str) -> tuple[bool, str]:
     if not username or not password:
-        return False
+        return False, "viewer"
 
     expected_user = current_app.config.get("ADMIN_USERNAME", "admin")
     expected_pass = current_app.config.get("ADMIN_PASSWORD", "admin")
@@ -28,14 +28,14 @@ def _verify_credentials(username: str, password: str) -> bool:
         user = None
 
     if user and check_password_hash(user.password_hash, password):
-        return True
+        return True, user.role or "viewer"
 
     # Allow env/config fallback only when no DB user exists or custom env password is configured
     if hmac.compare_digest(username, expected_user):
         if user is None or (expected_pass and expected_pass != "admin"):
             if hmac.compare_digest(password, expected_pass):
-                return True
-    return False
+                return True, "admin"
+    return False, "viewer"
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -54,10 +54,12 @@ def login():
                 error="Too many failed login attempts. Please wait a few minutes and try again.",
             ), 429
 
-        if _verify_credentials(username, password):
+        ok, user_role = _verify_credentials(username, password)
+        if ok:
             clear_login_failures(client_ip, username)
             session["logged_in"] = True
             session["username"] = username
+            session["role"] = user_role
             session.permanent = True
             return redirect(url_for("dashboard.dashboard"))
 
@@ -72,5 +74,6 @@ def logout():
         abort(403)
     session.pop("logged_in", None)
     session.pop("username", None)
+    session.pop("role", None)
     session.pop("csrf_token", None)
     return redirect(url_for("dashboard.index"))

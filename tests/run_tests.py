@@ -156,6 +156,8 @@ for mod_name in test_modules:
                 c = app_instance.test_client()
                 with c.session_transaction() as sess:
                     sess["logged_in"] = True
+                    sess["username"] = "admin"
+                    sess["role"] = "admin"
                 kwargs["client"] = c
 
         try:

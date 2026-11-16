@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, current_app, g, jsonify, request, session
 
-from app.auth_guard import _auth
+from app.auth_guard import _auth, check_role
 
 settings_api_bp = Blueprint('settings_api', __name__, url_prefix="/api")
 
@@ -31,6 +31,10 @@ def platform_settings():
     if request.method == "GET":
         rows = PlatformSetting.query.order_by(PlatformSetting.key.asc()).all()
         return jsonify({"settings": {row.key: row.value for row in rows}}), 200
+
+    role_err = check_role("admin")
+    if role_err:
+        return role_err
 
     data = request.get_json(silent=True) or {}
     if not isinstance(data, dict) or not data:

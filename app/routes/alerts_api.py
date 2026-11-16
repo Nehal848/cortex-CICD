@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from app.auth_guard import _auth
+from app.auth_guard import _auth, check_role
 
 alerts_api_bp = Blueprint('alerts_api', __name__, url_prefix="/api")
 
@@ -39,6 +39,9 @@ def alert_acknowledge(alert_id):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         user = (request.json or {}).get("user", "admin")
         from app.services.alert_service import acknowledge_alert
@@ -54,6 +57,9 @@ def alert_resolve(alert_id):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         user = (request.json or {}).get("user", "admin")
         from app.services.alert_service import resolve_alert
@@ -69,6 +75,9 @@ def alert_silence(alert_id):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.validation import validate_alert_silence
         cleaned, errors = validate_alert_silence(request.json or {})
@@ -87,6 +96,9 @@ def alert_archive(alert_id):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("admin")
+    if role_err:
+        return role_err
     try:
         from app.services.alert_service import archive_alert
         result, status = archive_alert(alert_id)

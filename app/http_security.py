@@ -22,6 +22,25 @@ _failed_logins: dict[str, list[float]] = defaultdict(list)
 _LOGIN_WINDOW_SECS = 300   # 5 minutes
 _MAX_FAILURES_PER_PAIR = 5
 _MAX_FAILURES_PER_IP = 15
+_redis_client = None
+
+
+def _get_security_redis():
+    """Return a shared Redis client for distributed rate limiting if configured."""
+    global _redis_client
+    url = (os.getenv("REDIS_URL") or "").strip()
+    if not url:
+        return None
+    if _redis_client is not None:
+        return _redis_client
+    try:
+        import redis
+        client = redis.Redis.from_url(url, socket_connect_timeout=1)
+        client.ping()
+        _redis_client = client
+        return client
+    except Exception:
+        return None
 
 
 def get_client_ip() -> str:
@@ -87,6 +106,17 @@ def _prune(timestamps: list[float], now: float) -> list[float]:
 
 def is_login_rate_limited(client_ip: str, username: str) -> bool:
     """Return True if client IP or (IP, username) exceeded failed attempts."""
+    # Check distributed Redis counter first if available
+    r = _get_security_redis()
+    if r:
+        try:
+            ip_val = r.get(f"cortex:rate:ip:{client_ip}")
+            pair_val = r.get(f"cortex:rate:pair:{client_ip}:{username.lower()}")
+            if (ip_val and int(ip_val) >= _MAX_FAILURES_PER_IP) or (pair_val and int(pair_val) >= _MAX_FAILURES_PER_PAIR):
+                return True
+        except Exception:
+            pass
+
     now = time.monotonic()
     ip_key = f"ip:{client_ip}"
     pair_key = f"pair:{client_ip}:{username.lower()}"
@@ -101,6 +131,20 @@ def is_login_rate_limited(client_ip: str, username: str) -> bool:
 
 def record_login_failure(client_ip: str, username: str) -> None:
     """Record a failed login timestamp for brute-force throttling."""
+    r = _get_security_redis()
+    if r:
+        try:
+            ip_k = f"cortex:rate:ip:{client_ip}"
+            pair_k = f"cortex:rate:pair:{client_ip}:{username.lower()}"
+            pipe = r.pipeline()
+            pipe.incr(ip_k)
+            pipe.expire(ip_k, _LOGIN_WINDOW_SECS)
+            pipe.incr(pair_k)
+            pipe.expire(pair_k, _LOGIN_WINDOW_SECS)
+            pipe.execute()
+        except Exception:
+            pass
+
     now = time.monotonic()
     with _login_lock:
         _failed_logins[f"ip:{client_ip}"].append(now)
@@ -109,6 +153,13 @@ def record_login_failure(client_ip: str, username: str) -> None:
 
 def clear_login_failures(client_ip: str, username: str) -> None:
     """Reset failure counter after a successful login."""
+    r = _get_security_redis()
+    if r:
+        try:
+            r.delete(f"cortex:rate:pair:{client_ip}:{username.lower()}")
+        except Exception:
+            pass
+
     with _login_lock:
         _failed_logins.pop(f"pair:{client_ip}:{username.lower()}", None)
 

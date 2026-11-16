@@ -36,6 +36,8 @@ def client(app):
     with app.test_client() as c:
         with c.session_transaction() as sess:
             sess["logged_in"] = True
+            sess["username"] = "admin"
+            sess["role"] = "admin"
         yield c
 
 

@@ -31,21 +31,21 @@ def dashboard():
 def pipeline():
     redir = _require_login()
     if redir: return redir
-    runs = PipelineRun.query.order_by(PipelineRun.created_at.desc()).all()
+    runs = PipelineRun.query.order_by(PipelineRun.created_at.desc()).limit(100).all()
     return render_template("pipeline.html", active_page="pipeline", runs=runs)
 
 @dashboard_bp.route("/deployments")
 def deployments():
     redir = _require_login()
     if redir: return redir
-    deps = Deployment.query.order_by(Deployment.created_at.desc()).all()
+    deps = Deployment.query.order_by(Deployment.created_at.desc()).limit(100).all()
     return render_template("deployments.html", active_page="deployments", deployments=deps)
 
 @dashboard_bp.route("/self-healing")
 def self_healing():
     redir = _require_login()
     if redir: return redir
-    events = HealingEvent.query.order_by(HealingEvent.created_at.desc()).all()
+    events = HealingEvent.query.order_by(HealingEvent.created_at.desc()).limit(100).all()
     return render_template("self_healing.html", active_page="self_healing", events=events)
 
 @dashboard_bp.route("/kubernetes")
@@ -64,21 +64,21 @@ def monitoring():
 def logs():
     redir = _require_login()
     if redir: return redir
-    runs = PipelineRun.query.order_by(PipelineRun.created_at.desc()).limit(20).all()
+    runs = PipelineRun.query.order_by(PipelineRun.created_at.desc()).limit(50).all()
     return render_template("logs.html", active_page="logs", runs=runs)
 
 @dashboard_bp.route("/prediction")
 def prediction():
     redir = _require_login()
     if redir: return redir
-    runs = PipelineRun.query.order_by(PipelineRun.risk_score.desc()).limit(10).all()
+    runs = PipelineRun.query.order_by(PipelineRun.risk_score.desc()).limit(50).all()
     return render_template("prediction.html", active_page="prediction", runs=runs)
 
 @dashboard_bp.route("/alerts")
 def alerts():
     redir = _require_login()
     if redir: return redir
-    all_alerts = Alert.query.order_by(Alert.created_at.desc()).all()
+    all_alerts = Alert.query.order_by(Alert.created_at.desc()).limit(100).all()
     return render_template("alerts.html", active_page="alerts", alerts=all_alerts)
 
 @dashboard_bp.route("/settings")

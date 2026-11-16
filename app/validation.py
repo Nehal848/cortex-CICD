@@ -283,6 +283,10 @@ def validate_service_url(url: str | None, field: str) -> tuple[str, str | None]:
     if host in ("metadata.google.internal", "metadata", "0.0.0.0"):
         return "", f"'{field}' points to a disallowed internal host."
 
+    disallowed_metadata = ("169.254.", "metadata.google", "metadata.aws", "instance-data")
+    if any(sub in host for sub in disallowed_metadata):
+        return "", f"'{field}' points to a disallowed cloud metadata host."
+
     try:
         ip_obj = ipaddress.ip_address(host)
         if ip_obj.is_link_local or ip_obj.is_unspecified or ip_obj.is_multicast:

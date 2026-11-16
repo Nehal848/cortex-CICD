@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from app.auth_guard import _auth
+from app.auth_guard import _auth, check_role
 
 pipeline_api_bp = Blueprint('pipeline_api', __name__, url_prefix="/api")
 
@@ -10,6 +10,9 @@ def run_pipeline():
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     data = request.json or {}
     from app.validation import validate_pipeline_run
     cleaned, errors = validate_pipeline_run(data)
@@ -61,6 +64,9 @@ def api_ml_retrain():
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("admin")
+    if role_err:
+        return role_err
     try:
         from ml.predict_failure import retrain_from_database
         min_samples = int((request.json or {}).get("min_samples", 5))
@@ -96,6 +102,9 @@ def api_heal(run_id):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.services.healing_service import trigger_healing_now
         return jsonify(trigger_healing_now(run_id, request.json or {}))

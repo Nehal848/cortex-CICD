@@ -107,3 +107,40 @@ def test_api_create_and_delete_user(client):
     assert del_res.status_code == 200
     assert del_res.get_json()["status"] == "deleted"
 
+
+def test_rbac_viewer_blocked_from_operator_and_admin_actions(app):
+    """Verify that a user with 'viewer' role is forbidden (403) from mutating actions."""
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["logged_in"] = True
+            sess["username"] = "reader_user"
+            sess["role"] = "viewer"
+
+        # Operator route blocked
+        res_pipeline = c.post("/api/pipeline/run", json={"branch": "main"})
+        assert res_pipeline.status_code == 403
+        assert "Insufficient permissions" in res_pipeline.get_json()["error"]
+
+        # Admin route blocked
+        res_settings = c.post("/api/settings", json={"cpu_threshold": 90})
+        assert res_settings.status_code == 403
+        assert "Insufficient permissions" in res_settings.get_json()["error"]
+
+
+def test_rbac_operator_allowed_operator_actions_but_blocked_from_admin(app):
+    """Verify operator role can trigger pipeline/scans but cannot alter platform settings."""
+    with app.test_client() as c:
+        with c.session_transaction() as sess:
+            sess["logged_in"] = True
+            sess["username"] = "operator_user"
+            sess["role"] = "operator"
+
+        # Admin-only route blocked
+        res_admin = c.post("/api/settings", json={"cpu_threshold": 90})
+        assert res_admin.status_code == 403
+
+        # Operator route allowed (doesn't return 403)
+        res_scan = c.post("/api/security/sbom", json={"image": "test:latest"})
+        assert res_scan.status_code == 200
+
+

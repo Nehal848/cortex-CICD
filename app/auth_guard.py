@@ -21,7 +21,15 @@ def _auth():
         if request.method in ("POST", "PUT", "PATCH", "DELETE") and should_enforce_csrf():
             if not validate_csrf_token():
                 return jsonify({"error": "CSRF validation failed"}), 403
-        g.api_user = session.get("username", "admin")
+        username = session.get("username", "admin")
+        g.api_user = username
+        g.api_user_role = session.get("role")
+        if not g.api_user_role:
+            try:
+                from app.models import User
+                g.api_user_role = User.get_role(username)
+            except Exception:
+                g.api_user_role = "admin" if username == "admin" else "viewer"
         return None
 
     token = _extract_api_token()
@@ -29,6 +37,7 @@ def _auth():
         configured = current_app.config.get("CORTEX_API_TOKEN") or os.getenv("CORTEX_API_TOKEN", "")
         if configured and hmac.compare_digest(token, configured):
             g.api_user = "api-token"
+            g.api_user_role = "admin"
             return None
 
         try:
@@ -41,6 +50,7 @@ def _auth():
                     if user.api_token_expires_at and user.api_token_expires_at < now:
                         return jsonify({"error": "API token expired"}), 401
                     g.api_user = user.username
+                    g.api_user_role = user.role or "viewer"
                     return None
         except Exception:
             pass
@@ -51,14 +61,25 @@ def _auth():
 ROLE_LEVELS = {"viewer": 1, "operator": 2, "admin": 3}
 
 
+def check_role(min_role: str):
+    """Verify that the currently authenticated user meets the minimum role level."""
+    user_role = getattr(g, "api_user_role", None) or "viewer"
+    if ROLE_LEVELS.get(user_role, 0) < ROLE_LEVELS.get(min_role, 1):
+        return jsonify({"error": "Insufficient permissions", "required": min_role, "current": user_role}), 403
+    return None
+
+
 def require_role(min_role: str):
-    """Decorator to enforce minimum role level on an API route."""
+    """Decorator to enforce authentication and minimum role level on an API route."""
     def decorator(f):
         @wraps(f)
         def decorated(*args, **kwargs):
-            user_role = g.get("api_user_role", "admin")  # default admin for backward compat
-            if ROLE_LEVELS.get(user_role, 0) < ROLE_LEVELS.get(min_role, 1):
-                return jsonify({"error": "Insufficient permissions", "required": min_role}), 403
+            err = _auth()
+            if err:
+                return err
+            role_err = check_role(min_role)
+            if role_err:
+                return role_err
             return f(*args, **kwargs)
         return decorated
     return decorator

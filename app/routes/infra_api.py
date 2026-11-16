@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 
-from app.auth_guard import _auth
+from app.auth_guard import _auth, check_role
 
 infra_api_bp = Blueprint('infra_api', __name__, url_prefix="/api")
 
@@ -48,6 +48,9 @@ def docker_restart(container_id):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.integrations import docker_client as dc
         return jsonify(dc.restart_container(container_id))
@@ -60,6 +63,9 @@ def docker_remove(container_id):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.integrations import docker_client as dc
         return jsonify(dc.remove_container(container_id, force=True))
@@ -136,6 +142,9 @@ def k8s_restart_pod(pod_name):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.integrations import k8s_client as k8s
         ns = request.json.get("namespace", "default") if request.json else "default"
@@ -149,6 +158,9 @@ def k8s_scale(deployment_name):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.integrations import k8s_client as k8s
         from app.validation import validate_k8s_scale
@@ -180,6 +192,9 @@ def jenkins_trigger(job_name):
     auth = _auth()
     if auth:
         return auth
+    role_err = check_role("operator")
+    if role_err:
+        return role_err
     try:
         from app.integrations import jenkins_client as jc
         return jsonify(jc.trigger_build(job_name, request.json or None))

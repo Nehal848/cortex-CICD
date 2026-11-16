@@ -26,7 +26,7 @@ def _load_store() -> dict:
         plain  = enclave.unseal_data(sealed)
         return json.loads(plain.decode("utf-8"))
     except Exception as exc:
-        logger.error("[SecureStorage] Failed to load store: %s", exc)
+        logger.warning("[SecureStorage] Existing store could not be decrypted with current key (%s) — initializing fresh store.", exc or "InvalidTag")
         return {}
 
 

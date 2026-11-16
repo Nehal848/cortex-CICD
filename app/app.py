@@ -1,3 +1,11 @@
+if __name__ == "__main__":
+    import os
+    import sys
+    import subprocess
+    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    _run_py = os.path.join(_root, "run.py")
+    sys.exit(subprocess.call([sys.executable, _run_py] + sys.argv[1:]))
+
 import os
 import sys
 from datetime import datetime, timedelta
@@ -8,8 +16,12 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
-from .db import db
-from .models import PipelineRun, Deployment, HealingEvent, Alert, User, PlatformSetting
+try:
+    from .db import db
+    from .models import PipelineRun, Deployment, HealingEvent, Alert, User, PlatformSetting
+except (ImportError, ValueError):
+    from app.db import db
+    from app.models import PipelineRun, Deployment, HealingEvent, Alert, User, PlatformSetting
 
 
 def create_app(test_config: dict | None = None, enable_background: bool = True):
@@ -21,7 +33,10 @@ def create_app(test_config: dict | None = None, enable_background: bool = True):
         pass
 
     app = Flask(__name__)
-    from .config import Config
+    try:
+        from .config import Config
+    except (ImportError, ValueError):
+        from app.config import Config
     app.config.from_object(Config)
 
     from datetime import timedelta
@@ -102,16 +117,30 @@ def create_app(test_config: dict | None = None, enable_background: bool = True):
     db.init_app(app)
 
     # ── Register blueprints ─────────────────────────────────────────
-    from .routes.auth import auth_bp
-    from .routes.dashboard import dashboard_bp
-    from .routes.webhooks import webhooks_bp
-    from .routes.health import health_bp
-    from .routes.pipeline_api import pipeline_api_bp
-    from .routes.infra_api import infra_api_bp
-    from .routes.security_api import security_api_bp
-    from .routes.alerts_api import alerts_api_bp
-    from .routes.settings_api import settings_api_bp
-    from .routes.sse_api import sse_api_bp
+    try:
+        from .routes.auth import auth_bp
+        from .routes.dashboard import dashboard_bp
+        from .routes.webhooks import webhooks_bp
+        from .routes.health import health_bp
+        from .routes.pipeline_api import pipeline_api_bp
+        from .routes.infra_api import infra_api_bp
+        from .routes.security_api import security_api_bp
+        from .routes.alerts_api import alerts_api_bp
+        from .routes.settings_api import settings_api_bp
+        from .routes.sse_api import sse_api_bp
+        from .http_security import get_csrf_token
+    except (ImportError, ValueError):
+        from app.routes.auth import auth_bp
+        from app.routes.dashboard import dashboard_bp
+        from app.routes.webhooks import webhooks_bp
+        from app.routes.health import health_bp
+        from app.routes.pipeline_api import pipeline_api_bp
+        from app.routes.infra_api import infra_api_bp
+        from app.routes.security_api import security_api_bp
+        from app.routes.alerts_api import alerts_api_bp
+        from app.routes.settings_api import settings_api_bp
+        from app.routes.sse_api import sse_api_bp
+        from app.http_security import get_csrf_token
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -125,7 +154,6 @@ def create_app(test_config: dict | None = None, enable_background: bool = True):
     app.register_blueprint(health_bp)
 
     # ── Expose CSRF token helper to all Jinja templates ────────────
-    from .http_security import get_csrf_token
 
     @app.context_processor
     def _inject_security_context():

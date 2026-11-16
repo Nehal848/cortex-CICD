@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}Cortex CI/CD{% endblock %}</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v='1.0.6') }}">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   {% block extra_css %}{% endblock %}
 </head>
@@ -103,11 +103,11 @@
         <div class="top-nav-right">
           <button class="icon-nav-btn" title="Alerts Center"><i class="fa-solid fa-bell"></i></button>
           <button class="icon-nav-btn" title="AI Diagnostics Help"><i class="fa-solid fa-circle-question"></i></button>
-          <div class="nav-user-profile">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop" alt="User Profile" class="nav-avatar">
+          <div class="nav-user-profile" title="Logged in as {{ session.get('username', 'Admin') }}">
+            <div class="nav-avatar-circle">{{ (session.get('username', 'Admin') or 'A')[0]|upper }}</div>
             <div class="user-details">
-              <span class="user-name-text">Holland</span>
-              <span class="user-role-text">DevOps Admin</span>
+              <span class="user-name-text">{{ session.get('username', 'Admin') }}</span>
+              <span class="user-role-text">{{ (session.get('role', 'admin') or 'admin')|capitalize }}</span>
             </div>
             <i class="fa-solid fa-chevron-down dropdown-arrow"></i>
           </div>
@@ -123,7 +123,7 @@
 
   </div>
 
-  <script src="{{ url_for('static', filename='js/app.js', v='1.0.1') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js', v='1.0.6') }}"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

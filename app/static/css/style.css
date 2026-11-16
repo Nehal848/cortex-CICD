@@ -1983,6 +1983,22 @@ body.dashboard-body {
   border: 1px solid rgba(229, 193, 138, 0.25);
 }
 
+.nav-avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #2563eb);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4);
+  flex-shrink: 0;
+}
+
 .user-details {
   display: flex;
   flex-direction: column;

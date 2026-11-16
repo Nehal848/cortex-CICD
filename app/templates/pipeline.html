@@ -187,31 +187,34 @@
         <table class="build-info-table">
           <tr>
             <td>Build Number</td>
-            <td class="bold-text">#256</td>
+            <td class="bold-text">#{{ (runs[0].jenkins_build_number or runs[0].run_id) if runs else '256' }}</td>
           </tr>
           <tr>
             <td>Triggered By</td>
-            <td>Git Push</td>
+            <td>{{ runs[0].triggered_by if runs else 'Git Push' }}</td>
           </tr>
           <tr>
             <td>Branch</td>
-            <td><i class="fa-solid fa-code-branch"></i> main</td>
+            <td><i class="fa-solid fa-code-branch"></i> {{ runs[0].branch if runs else 'main' }}</td>
           </tr>
           <tr>
             <td>Commit</td>
-            <td class="monospaced-span">c4ad2f1 <i class="fa-regular fa-copy copy-icon-action"></i></td>
+            <td class="monospaced-span">{{ (runs[0].commit_message or 'c4ad2f1')[:16] if runs else 'c4ad2f1' }} <i class="fa-regular fa-copy copy-icon-action"></i></td>
           </tr>
           <tr>
             <td>Duration</td>
-            <td>4 min 12 sec</td>
+            <td>{{ (runs[0].duration_secs ~ ' sec') if (runs and runs[0].duration_secs) else '4 min 12 sec' }}</td>
           </tr>
           <tr>
             <td>Started</td>
-            <td>May 20, 2025 12:42 PM</td>
+            <td>{{ runs[0].timestamp if runs else 'Just now' }}</td>
           </tr>
           <tr>
             <td>Status</td>
-            <td><span class="status-pill-failed" id="info-status-pill">Failed</span></td>
+            <td>
+              {% set cur_status = runs[0].status if runs else 'Failed' %}
+              <span class="{% if cur_status in ['Success', 'Healed'] %}status-pill-success{% elif cur_status == 'Failed' %}status-pill-failed{% else %}status-pill-warning{% endif %}" id="info-status-pill">{{ cur_status }}</span>
+            </td>
           </tr>
         </table>
       </div>
@@ -233,46 +236,46 @@
             </tr>
           </thead>
           <tbody>
-            <tr class="failed-row-highlight">
-              <td class="bold-text">#256</td>
-              <td><span class="status-dot-table failed"></span> Failed</td>
-              <td><i class="fa-solid fa-code-branch"></i> main</td>
-              <td>4m 12s</td>
-              <td>Git Push</td>
-              <td>2 min ago</td>
-            </tr>
-            <tr>
-              <td class="bold-text">#255</td>
-              <td><span class="status-dot-table success"></span> Success</td>
-              <td><i class="fa-solid fa-code-branch"></i> main</td>
-              <td>5m 02s</td>
-              <td>Git Push</td>
-              <td>1 hour ago</td>
-            </tr>
-            <tr>
-              <td class="bold-text">#254</td>
-              <td><span class="status-dot-table failed"></span> Failed</td>
-              <td><i class="fa-solid fa-code-branch"></i> main</td>
-              <td>3m 45s</td>
-              <td>Git Push</td>
-              <td>3 hours ago</td>
-            </tr>
-            <tr>
-              <td class="bold-text">#253</td>
-              <td><span class="status-dot-table success"></span> Success</td>
-              <td><i class="fa-solid fa-code-branch"></i> main</td>
-              <td>6m 18s</td>
-              <td>Git Push</td>
-              <td>5 hours ago</td>
-            </tr>
-            <tr>
-              <td class="bold-text">#252</td>
-              <td><span class="status-dot-table success"></span> Success</td>
-              <td><i class="fa-solid fa-code-branch"></i> main</td>
-              <td>4m 05s</td>
-              <td>Git Push</td>
-              <td>7 hours ago</td>
-            </tr>
+            {% if runs %}
+              {% for r in runs[:8] %}
+              <tr class="{% if r.status == 'Failed' %}failed-row-highlight{% endif %}">
+                <td class="bold-text">#{{ r.jenkins_build_number or r.run_id }}</td>
+                <td>
+                  <span class="status-dot-table {% if r.status in ['Success', 'Healed'] %}success{% elif r.status == 'Failed' %}failed{% else %}warning{% endif %}"></span>
+                  {{ r.status }}
+                </td>
+                <td><i class="fa-solid fa-code-branch"></i> {{ r.branch }}</td>
+                <td>{{ r.duration_secs }}s</td>
+                <td>{{ r.triggered_by }}</td>
+                <td>{{ r.timestamp }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr class="failed-row-highlight">
+                <td class="bold-text">#256</td>
+                <td><span class="status-dot-table failed"></span> Failed</td>
+                <td><i class="fa-solid fa-code-branch"></i> main</td>
+                <td>4m 12s</td>
+                <td>Git Push</td>
+                <td>2 min ago</td>
+              </tr>
+              <tr>
+                <td class="bold-text">#255</td>
+                <td><span class="status-dot-table success"></span> Success</td>
+                <td><i class="fa-solid fa-code-branch"></i> main</td>
+                <td>5m 02s</td>
+                <td>Git Push</td>
+                <td>1 hour ago</td>
+              </tr>
+              <tr>
+                <td class="bold-text">#254</td>
+                <td><span class="status-dot-table failed"></span> Failed</td>
+                <td><i class="fa-solid fa-code-branch"></i> main</td>
+                <td>3m 45s</td>
+                <td>Git Push</td>
+                <td>3 hours ago</td>
+              </tr>
+            {% endif %}
           </tbody>
         </table>
         <div class="view-all-builds-footer">

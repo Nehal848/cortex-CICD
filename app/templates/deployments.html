@@ -23,6 +23,49 @@
 
   <!-- Deployments Grid -->
   <div class="deployments-grid-container" id="deployments-cards-grid">
+    {% if deployments %}
+      {% for dep in deployments %}
+      <div class="dashboard-card deployment-card-item" data-namespace="{{ dep.environment | lower }}">
+        <div class="deploy-card-header">
+          <h3 class="deploy-card-title">{{ dep.name }}</h3>
+          <span class="deploy-namespace-badge ns-{{ dep.environment | lower }}">{{ dep.environment | lower }}</span>
+        </div>
+        <div class="deploy-card-body">
+          <div class="deploy-info-row">
+            <span class="info-label">Active Release:</span>
+            <span class="info-value monospaced-span">{{ dep.version }}</span>
+          </div>
+          <div class="deploy-info-row">
+            <span class="info-label">Cluster Pods:</span>
+            <span class="info-value">{% if dep.status == 'Running' %}4/4 Running{% elif dep.status == 'Failed' %}0/4 Failed{% else %}2/4 Running{% endif %}</span>
+          </div>
+          <div class="deploy-info-row">
+            <span class="info-label">Deployed By:</span>
+            <span class="info-value">{{ dep.deployed_by }} ({{ dep.timestamp }})</span>
+          </div>
+          
+          <!-- Pod Progress bar -->
+          <div class="status-card-progress mt-2 mb-3">
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill {% if dep.status == 'Running' %}green{% elif dep.status == 'Failed' %}red{% else %}warning{% endif %}" style="width: {% if dep.status == 'Running' %}100%{% elif dep.status == 'Failed' %}20%{% else %}65%{% endif %};"></div>
+            </div>
+          </div>
+
+          <div class="deploy-status-badge-row">
+            <div class="status-indicator">
+              <span class="status-indicator-dot {% if dep.status == 'Running' %}healthy{% elif dep.status == 'Failed' %}failed{% else %}warning{% endif %}"></span>
+              <span class="status-label {% if dep.status == 'Running' %}healthy{% elif dep.status == 'Failed' %}critical-color{% else %}warning{% endif %}">{{ dep.status }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="deploy-card-actions">
+          <button class="btn btn-outline-purple btn-deploy-action" data-service="{{ dep.name }}" data-action="logs"><i class="fa-solid fa-receipt"></i> Logs</button>
+          <button class="btn btn-outline-bluegray btn-deploy-action" data-service="{{ dep.name }}" data-action="rollback"><i class="fa-solid fa-rotate-left"></i> Rollback</button>
+          <button class="btn btn-outline-gold btn-deploy-action" data-service="{{ dep.name }}" data-action="redeploy"><i class="fa-solid fa-cloud-arrow-up"></i> Deploy</button>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
     
     <!-- Deployment Card 1: frontend-service -->
     <div class="dashboard-card deployment-card-item" data-namespace="production">
@@ -218,6 +261,7 @@
         <button class="btn btn-outline-gold btn-deploy-action" data-service="payment-service" data-action="redeploy"><i class="fa-solid fa-cloud-arrow-up"></i> Deploy</button>
       </div>
     </div>
+    {% endif %}
 
   </div>
 {% endblock %}

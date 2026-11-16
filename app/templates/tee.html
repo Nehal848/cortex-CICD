@@ -6,6 +6,10 @@
 {% block extra_css %}
 <style>
   .tee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 992px) {
+    .tee-grid { grid-template-columns: 1fr; }
+    .kv-row { flex-direction: column; gap: 0.25rem; }
+  }
   .tee-full { grid-column: 1 / -1; }
 
   /* Status bar */

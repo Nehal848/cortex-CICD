@@ -30,8 +30,19 @@ def collect_training_sample(run, healing=None) -> dict | None:
 
 
 def get_all_training_samples(app_context) -> list[dict]:
-    """Collect all labelled samples from the database."""
+    """Collect all labelled samples from the database.
+
+    Must be called inside a Flask application context. If called outside one,
+    returns an empty list silently so the ML model falls back to synthetic data.
+    """
     samples = []
+    try:
+        from flask import current_app  # noqa: F401 — triggers RuntimeError if no ctx
+        _ = current_app._get_current_object()
+    except RuntimeError:
+        # No active app context — skip DB collection, use synthetic data instead
+        logger.debug("[DataCollector] No app context available — skipping DB sample collection.")
+        return samples
     try:
         from app.models import PipelineRun, HealingEvent
         runs = PipelineRun.query.filter(

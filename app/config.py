@@ -60,7 +60,7 @@ class Config:
                     "Set a secure, random SECRET_KEY environment variable."
                 )
 
-            insecure_passwords = {"admin", "admin123", "password", "root", ""}
+            insecure_passwords = {"admin", "admin123", "password", "root", "", "change-me-in-production"}
             if admin_pw in insecure_passwords:
                 raise RuntimeError(
                     "[SECURITY VIOLATION] Cortex cannot boot in production mode with a default ADMIN_PASSWORD. "

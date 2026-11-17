@@ -14,6 +14,7 @@
 
 ## 📋 Table of Contents
 - [Complete Technical Documentation](docs/COMPLETE_PROJECT_DOCUMENTATION.md)
+- [Complete Project File Structure Guide](docs/PROJECT_STRUCTURE.md)
 - [Overview](#overview)
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
@@ -223,6 +224,8 @@ erDiagram
 ---
 
 ## 📁 Folder Structure
+
+> 💡 For an exhaustive file-by-file breakdown and summaries of all modules, see **[PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)**.
 
 ```text
 CortexCICD/

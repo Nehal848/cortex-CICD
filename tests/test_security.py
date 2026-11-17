@@ -43,6 +43,8 @@ def test_secret_scanner_ignores_git():
 
 def test_production_security_validation_rejects_default_secrets(monkeypatch):
     from app.config import Config
+    monkeypatch.setenv("SECRET_KEY", "super-secret-default-key")
+    monkeypatch.setenv("ADMIN_PASSWORD", "admin")
     monkeypatch.setattr(Config, "ENV", "production")
     monkeypatch.setattr(Config, "SECRET_KEY", "super-secret-default-key")
     monkeypatch.setattr(Config, "ADMIN_PASSWORD", "admin")
@@ -54,6 +56,8 @@ def test_production_security_validation_rejects_default_secrets(monkeypatch):
 
 def test_production_security_validation_accepts_strong_secrets(monkeypatch):
     from app.config import Config
+    monkeypatch.setenv("SECRET_KEY", "complex-unique-random-prod-key-1234567890")
+    monkeypatch.setenv("ADMIN_PASSWORD", "SuperSecureComplexPassword#2026")
     monkeypatch.setattr(Config, "ENV", "production")
     monkeypatch.setattr(Config, "SECRET_KEY", "complex-unique-random-prod-key-1234567890")
     monkeypatch.setattr(Config, "ADMIN_PASSWORD", "SuperSecureComplexPassword#2026")

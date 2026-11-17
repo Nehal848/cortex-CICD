@@ -38,16 +38,8 @@ class Config:
         import logging
         env_val = cls.ENV if cls.ENV != "development" else os.getenv("FLASK_ENV", cls.ENV)
         if env_val == "production":
-            secret_val = (
-                cls.SECRET_KEY
-                if cls.SECRET_KEY != "super-secret-default-key"
-                else os.getenv("SECRET_KEY", cls.SECRET_KEY)
-            )
-            admin_pw = (
-                cls.ADMIN_PASSWORD
-                if cls.ADMIN_PASSWORD != "admin"
-                else os.getenv("ADMIN_PASSWORD", cls.ADMIN_PASSWORD)
-            )
+            secret_val = cls.SECRET_KEY or os.getenv("SECRET_KEY", "")
+            admin_pw = cls.ADMIN_PASSWORD or os.getenv("ADMIN_PASSWORD", "")
             insecure_keys = {
                 "super-secret-default-key",
                 "cortex-secret-key-change-in-production",

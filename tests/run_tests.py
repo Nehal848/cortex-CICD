@@ -41,15 +41,33 @@ class MonkeyPatch:
         else:
             name = name_or_val
         old_val = getattr(target, name, None)
-        self._patches.append((target, name, old_val, hasattr(target, name)))
+        self._patches.append(("attr", target, name, old_val, hasattr(target, name)))
         setattr(target, name, val)
 
+    def setenv(self, name, value, prepend=None):
+        old_val = os.environ.get(name)
+        self._patches.append(("env", name, old_val, name in os.environ))
+        os.environ[name] = str(value)
+
+    def delenv(self, name, raising=True):
+        old_val = os.environ.get(name)
+        self._patches.append(("env", name, old_val, name in os.environ))
+        os.environ.pop(name, None)
+
     def undo(self):
-        for target, name, old_val, had in reversed(self._patches):
-            if had:
-                setattr(target, name, old_val)
+        for patch_item in reversed(self._patches):
+            if patch_item[0] == "env":
+                _, name, old_val, had = patch_item
+                if had:
+                    os.environ[name] = old_val
+                else:
+                    os.environ.pop(name, None)
             else:
-                delattr(target, name)
+                _, target, name, old_val, had = patch_item
+                if had:
+                    setattr(target, name, old_val)
+                else:
+                    delattr(target, name)
 
 
 class DummyPytest:

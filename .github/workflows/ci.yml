@@ -37,6 +37,7 @@ jobs:
 
       - name: Execute Full Test Suite with Coverage
         env:
+          PYTHONPATH: .
           FLASK_ENV: testing
           SECRET_KEY: ci-test-secret-key-32-bytes-long
           ADMIN_PASSWORD: ci-admin-password

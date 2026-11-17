@@ -9,6 +9,7 @@ __pycache__/
 *.sqlite
 .cortex_init.lock
 .coverage
+coverage.xml
 .pytest_cache/
 reports/generated/*.pdf
 reports/generated/*.json

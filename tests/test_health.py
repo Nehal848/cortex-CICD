@@ -3,7 +3,10 @@ tests/test_health.py — Health endpoint tests
 """
 import json
 import pytest
-from tests.conftest import _TEST_CONFIG
+try:
+    from tests.conftest import _TEST_CONFIG
+except ImportError:
+    from conftest import _TEST_CONFIG
 from app.app import create_app
 
 
